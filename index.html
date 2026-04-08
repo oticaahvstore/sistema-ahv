@@ -256,7 +256,7 @@
 
     <button class="bloco-menu cor-entradas" onclick="navegarPara('estoque')">
         <div>
-            <h5 class="bloco-titulo">ENTRADA</h3>
+            <h3 class="bloco-titulo">ENTRADA</h3>
             <p class="bloco-sub"></p>
         </div>
         <div class="bloco-rodape">
@@ -380,8 +380,8 @@
             <div class="input-group" style="flex: 2;"><label>Endereço</label><input type="text" id="rua_cliente"></div>
             <div class="input-group" style="flex: 0.4;"><label>Nº</label><input type="text" id="num_end_cliente"></div>
             <div class="input-group" style="flex: 1;"><label>Bairro</label><input type="text" id="bairro_cliente"></div>
-            <div class="input-group" style="flex: 0.7;"><label>CEP</label><input type="text" id="cep_cliente" maxlength="9" oninput="mascaraCEP(this)"></div>
-        </div>
+            <div class="input-group" style="flex: 0.7;"><label>CEP</label><input type="text" id="cep_cliente" maxlength="9" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)"></div>
+</div>
         <div class="eye-row sensivel" style="background: white;">
             <div class="input-group"><label>Complemento</label><input type="text" id="complemento_cliente"></div>
             <div class="input-group"><label>Cidade</label><input type="text" id="cid_cliente"></div>
@@ -446,7 +446,7 @@
             <div class="input-group" style="flex: 0.8;"><label>Material</label><select id="material_arma"><option value=""></option><option>Acetato</option><option>Metal</option><option>Fio de Nylon</option><option>Parafuso</option></select></div>
             <div class="input-group" style="flex: 0.6;"><label>Estado</label><select id="estado_arma"><option value=""></option><option>Novo</option><option>Usado</option></select></div>
 <div class="input-group" style="flex: 2.5;">
-    <label>Ref / Marca / Cor / Tam</label>
+    <label>Marca / Ref. / Cor / Tam</label>
     <input type="text" id="ref_arma" list="lista_armacoes" oninput="buscarSugestoes(this.value)" onblur="buscarNoEstoque(this.value)" placeholder="Digite a Ref">
     
     <datalist id="lista_armacoes"></datalist>
@@ -557,8 +557,15 @@ async function carregarPedidoSelecionado(numOS) {
             }
         });
 
+        // --- NOVO AQUI: Formatação de Moeda ---
+        // Isso garante as duas casas decimais (0,00) nos campos de valor
+        if(data.vlr_armacao) document.getElementById('vlr_armacao').value = parseFloat(data.vlr_armacao).toFixed(2);
+        if(data.vlr_lentes) document.getElementById('vlr_lentes').value = parseFloat(data.vlr_lentes).toFixed(2);
+        if(data.vlr_desconto) document.getElementById('vlr_desconto').value = parseFloat(data.vlr_desconto).toFixed(2);
+        if(data.vlr_total) document.getElementById('vlr_total').value = parseFloat(data.vlr_total).toFixed(2);
+        // ---------------------------------------
+
         // 2. CORREÇÃO PROATIVA: Força a busca das listas de lentes (OD e OE)
-        // Primeiro carregamos as opções nos selects, depois definimos o valor salvo
         if (data.tipo_lente_od) {
             await filtrarLentes('od'); 
             document.getElementById('nome_lente_od').value = data.nome_lente_od;
@@ -1120,37 +1127,93 @@ async function puxarDadosPedido(numOS) {
     }
 }
 
-function gerarParcelasVideo() {
-    const valorTotal = parseFloat(document.getElementById('fin_valor').value);
-    const qtde = parseInt(document.getElementById('fin_qtde').value) || 1;
-    const intervalo = parseInt(document.getElementById('fin_intervalo').value) || 30;
-    const dataInicial = document.getElementById('fin_data').value;
-    const corpo = document.getElementById('corpo_parcelas_video');
+async function puxarDadosPedido(numOS) {
+    if (!numOS) return;
 
-    if (!valorTotal || !dataInicial) { 
-        alert("Preencha o Valor e a Data de Vencimento!"); 
-        return; 
+    // 1. Busca os dados do pedido (Valor e Nome)
+    const { data: pedido } = await _supabase
+        .from('tabela_pedidos')
+        .select('nome_cliente, vlr_total, num_os')
+        .eq('num_os', numOS)
+        .maybeSingle();
+
+    if (pedido) {
+        document.getElementById('fin_valor').value = parseFloat(pedido.vlr_total).toFixed(2);
+        const descGerada = "Recebimento: " + pedido.nome_cliente + " (OS " + pedido.num_os + ")";
+        document.getElementById('fin_desc').value = descGerada;
+
+        // 2. BUSCA NO BANCO: Já existem parcelas para essa OS?
+        const { data: parcelasExistentes } = await _supabase
+            .from('financeiro')
+            .select('*')
+            .ilike('descricao', `%OS ${pedido.num_os}%`)
+            .order('data', { ascending: true });
+
+        const corpo = document.getElementById('corpo_parcelas_video');
+        corpo.innerHTML = ""; 
+
+        if (parcelasExistentes && parcelasExistentes.length > 0) {
+            parcelasExistentes.forEach((p, i) => {
+                const tr = document.createElement('tr');
+                tr.style.borderBottom = "1px solid #eee";
+                
+                // --- LÓGICA DE STATUS ---
+                // Se p.pago for true, fica verde. Se não, fica branco.
+                const corFundo = p.pago ? "#e8f5e9" : "#ffffff";
+                tr.style.backgroundColor = corFundo;
+
+                tr.innerHTML = `
+                    <td style="padding: 5px; border-right: 1px solid #ccc;">${i + 1}º</td>
+                    <td style="padding: 5px; border-right: 1px solid #ccc;">${new Date(p.data).toLocaleDateString('pt-BR')}</td>
+                    <td style="padding: 5px; font-weight: bold;">R$ ${parseFloat(p.valor).toFixed(2).replace('.', ',')}</td>
+                    <td style="padding: 5px; text-align: center;">
+                        ${p.pago 
+                            ? '<span style="color: #2e7d32; font-weight: bold; font-size: 10px;">✅ PAGO</span>' 
+                            : `<button onclick="baixarParcela('${p.id}', '${numOS}')" style="background: #fff3e0; border: 1px solid #ff9800; border-radius: 3px; cursor: pointer; font-size: 9px; padding: 2px 5px;">🔔 PAGAR</button>`
+                        }
+                        <button onclick="excluirParcela('${p.id}', '${numOS}')" style="background:none; border:none; cursor:pointer; margin-left: 5px;">❌</button>
+                    </td>
+                `;
+                corpo.appendChild(tr);
+            });
+            document.getElementById('res_falta_video').innerText = "LANÇADO";
+        } else {
+            document.getElementById('res_falta_video').innerText = "0,00";
+        }
     }
+}
 
-    corpo.innerHTML = ""; // Limpa a tabela antes de gerar novas
-    const valorParcela = (valorTotal / qtde).toFixed(2);
+async function excluirParcela(id, numOS) {
+    if (!confirm("Deseja apagar esta parcela do financeiro?")) return;
 
-    for (let i = 0; i < qtde; i++) {
-        let d = new Date(dataInicial + 'T00:00:00');
-        d.setDate(d.getDate() + (i * intervalo));
+    const { error } = await _supabase
+        .from('financeiro')
+        .delete()
+        .eq('id', id);
 
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = "1px solid #eee";
-        tr.innerHTML = `
-            <td style="padding: 5px; border-right: 1px solid #ccc;">${i + 1}º</td>
-            <td style="padding: 5px; border-right: 1px solid #ccc;">${d.toLocaleDateString('pt-BR')}</td>
-            <td style="padding: 5px; font-weight: bold;">R$ ${valorParcela.replace('.', ',')}</td>
-        `;
-        corpo.appendChild(tr);
+    if (error) {
+        alert("Erro ao excluir: " + error.message);
+    } else {
+        alert("Parcela excluída com sucesso!");
+        // Recarrega a lista para mostrar que sumiu
+        puxarDadosPedido(numOS);
     }
-    
-    // Atualiza o campo "Falta" no rodapé
-    document.getElementById('res_falta_video').innerText = valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+}
+
+async function baixarParcela(id, numOS) {
+    if (!confirm("Confirmar recebimento desta parcela?")) return;
+
+    const { error } = await _supabase
+        .from('financeiro')
+        .update({ pago: true }) // Muda o status para pago
+        .eq('id', id);
+
+    if (error) {
+        alert("Erro ao processar: " + error.message);
+    } else {
+        alert("Pagamento registrado!");
+        puxarDadosPedido(numOS); // Atualiza a tela
+    }
 }
 
 async function salvarTudoNoBanco() {
@@ -1208,6 +1271,58 @@ async function salvarTudoNoBanco() {
     // Agora o sistema fica parado exatamente onde está.
 }
 
+async function buscarCEP(valor) {
+    // Remove qualquer traço ou ponto para deixar só números
+    const cep = valor.replace(/\D/g, '');
+
+    // Só busca se o CEP tiver os 8 dígitos corretos
+    if (cep.length !== 8) return;
+
+    try {
+        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
+        const data = await response.json();
+
+        if (data.erro) {
+            alert("CEP não encontrado.");
+            return;
+        }
+
+        // Preenche os seus campos originais automaticamente
+        document.getElementById('rua_cliente').value = data.logradouro;
+        document.getElementById('bairro_cliente').value = data.bairro;
+        document.getElementById('cid_cliente').value = data.localidade;
+        document.getElementById('uf_cliente').value = data.uf;
+        
+        // Pula o foco direto para o campo de Número para você ganhar tempo
+        if(document.getElementById('num_end_cliente')) {
+            document.getElementById('num_end_cliente').focus();
+        }
+
+    } catch (error) {
+        console.error("Erro ao buscar o endereço:", error);
+    }
+}
+
+function mascaraCPF(i) {
+    let v = i.value.replace(/\D/g, ""); // Remove tudo que não é número
+    
+    // Coloca a pontuação: 000.000.000-00
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d)/, "$1.$2");
+    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+    
+    i.value = v;
+}
+
+function mascaraTel(i) {
+    let v = i.value.replace(/\D/g, ""); // Remove tudo que não é número
+    
+    // Formata como (00) 00000-0000
+    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
+    v = v.replace(/(\d{5})(\d)/, "$1-$2");
+    
+    i.value = v;
+}
 </script>
 </body>
 </html>
