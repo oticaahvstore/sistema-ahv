@@ -146,11 +146,44 @@
         </button>
     </div>
 
-    <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-left: 3px solid #1a237e; padding-left: 10px;">
-        <div style="color: #1a237e; font-weight: 800; font-size: 16px;">LANÇAMENTO FINANCEIRO (CAIXA)</div>
-        <button onclick="document.getElementById('busca_fin_wrapper').style.display='block'" style="background:none; border:none; cursor:pointer; font-size:18px;" title="Importar Cliente">🔍</button>
+<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-left: 3px solid #1a237e; padding-left: 10px;">
+    <div style="color: #1a237e; font-weight: 800; font-size: 16px;">LANÇAMENTO FINANCEIRO (CAIXA)</div>
+    <button onclick="document.getElementById('busca_fin_wrapper').style.display='block'" style="background:none; border:none; cursor:pointer; font-size:18px;" title="Importar Cliente">🔍</button>
+</div>
+
+<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+    <div style="display: flex; gap: 15px; align-items: flex-end; justify-content: center; margin-bottom: 15px;">
+        
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 10px; font-weight: bold; color: #1a237e; text-transform: uppercase;">Data Início</label>
+            <input type="date" id="filtro_inicio" style="width: 135px; height: 32px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 4px;">
+            <label style="font-size: 10px; font-weight: bold; color: #1a237e; text-transform: uppercase;">Data Final</label>
+            <input type="date" id="filtro_fim" style="width: 135px; height: 32px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
+        </div>
+
+        <button onclick="atualizarResumoMensal()" style="background: none; border: 1px solid #1a237e; color: #1a237e; width: 40px; height: 32px; border-radius: 4px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Filtrar">
+            🔍
+        </button>
     </div>
 
+    <div style="display: flex; gap: 8px;">
+        <div style="flex: 1; border-top: 4px solid #2e7d32; background: #f9fff9; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 9px; font-weight: bold; color: #2e7d32; margin-bottom: 5px;">VENDAS</div>
+            <div style="font-size: 14px; font-weight: 800; color: #1b5e20;" id="resumo_vendas">R$ 0,00</div>
+        </div>
+        <div style="flex: 1; border-top: 4px solid #c62828; background: #fff9f9; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 9px; font-weight: bold; color: #c62828; margin-bottom: 5px;">DESPESAS</div>
+            <div style="font-size: 14px; font-weight: 800; color: #b71c1c;" id="resumo_despesas">R$ 0,00</div>
+        </div>
+        <div style="flex: 1; border-top: 4px solid #1565c0; background: #f9fbff; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+            <div style="font-size: 9px; font-weight: bold; color: #1565c0; margin-bottom: 5px;">RECEITA</div>
+            <div style="font-size: 14px; font-weight: 800; color: #0d47a1;" id="resumo_receita">R$ 0,00</div>
+        </div>
+    </div>
+</div>
     <div id="busca_fin_wrapper" style="display: none; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #1a237e;">
         <label style="font-size: 9px; font-weight: bold;">SELECIONE O PEDIDO PARA IMPORTAR VALOR:</label>
         <select id="busca_fin_cliente" onchange="puxarDadosPedido(this.value); document.getElementById('busca_fin_wrapper').style.display='none';" style="width: 100%; height: 35px; border: 1px solid #1a237e; border-radius: 4px;">
@@ -174,6 +207,7 @@
                     <option value="Boleto">Boleto</option>
                     <option value="Carnê">Carnê</option>
                     <option value="Cartão Crédito">Cartão Crédito</option>
+                    <option value="Despesa">⚠️ DESPESA / SAÍDA</option>
                 </select>
             </div>
 
@@ -698,27 +732,35 @@ async function buscarNoEstoque(valorCompleto) {
     }
 
     // --- SALVAR E FINANCEIRO ---
-    async function salvarPedido() {
-        const os = document.getElementById('num_os').value;
-        const nome = document.getElementById('nome_cliente').value;
-        if(!os || !nome) return alert("Preencha Nome e O.S.");
+async function salvarPedido() {
+    const os = document.getElementById('num_os').value;
+    const nome = document.getElementById('nome_cliente').value;
+    if(!os || !nome) return alert("Preencha Nome e O.S.");
 
-        const dados = {};
-        document.querySelectorAll('input, select, textarea').forEach(el => { 
-            if(el.id && !['user_login', 'pass_login', 'select_busca'].includes(el.id)) {
-                dados[el.id] = el.value || null;
-            }
-        });
+    const dados = {};
+    // Lista de campos que o sistema deve IGNORAR ao salvar um pedido
+    const camposParaIgnorar = [
+        'user_login', 'pass_login', 'select_busca', 
+        'filtro_inicio', 'filtro_fim', 'busca_fin_cliente'
+    ];
 
-        const { error } = await _supabase.from('tabela_pedidos').upsert(dados, { onConflict: 'num_os' });
-        if (error) alert("Erro: " + error.message);
-        else {
-            alert("Pedido salvo!");
-            editandoPedido = true;
-            atualizarSelectBusca();
+    document.querySelectorAll('input, select, textarea').forEach(el => { 
+        // Só salva se o campo tiver ID e não estiver na lista de ignorados
+        if(el.id && !camposParaIgnorar.includes(el.id)) {
+            dados[el.id] = el.value || null;
         }
-    }
+    });
 
+    const { error } = await _supabase.from('tabela_pedidos').upsert(dados, { onConflict: 'num_os' });
+    if (error) {
+        console.error("Erro ao salvar pedido:", error);
+        alert("Erro: " + error.message);
+    } else {
+        alert("Pedido salvo!");
+        editandoPedido = true;
+        atualizarSelectBusca();
+    }
+}
 function calcularTotal() {
     const armacao = parseFloat(document.getElementById('vlr_armacao').value) || 0;
     const lentes = parseFloat(document.getElementById('vlr_lentes').value) || 0;
@@ -1101,25 +1143,82 @@ async function executarLancamentoFinanceiro() {
     }
 }
 // --- FUNÇÃO ÚNICA PARA O FINANCEIRO (COLE NO FINAL DO SCRIPT) ---
+// Ativa a tela financeira e já puxa os totais do mês
 function irParaFinanceiro() {
-    // 1. Esconde o menu
     document.getElementById('menu-principal').style.display = 'none';
-    
-    // 2. Mostra a área de conteúdo
     document.getElementById('sistema-content').style.display = 'block';
 
-    // 3. Esconde Vendas e Estoque (IDs que você já usa)
     if(document.getElementById('os-content')) document.getElementById('os-content').style.display = 'none';
     if(document.getElementById('aba-estoque')) document.getElementById('aba-estoque').style.display = 'none';
 
-    // 4. Mostra o Financeiro
     if(document.getElementById('aba-financeiro')) {
         document.getElementById('aba-financeiro').style.display = 'block';
     }
 
-    // 5. Esconde a barra de busca
     const barra = document.getElementById('select_busca')?.parentElement;
     if (barra) barra.style.display = 'none';
+
+    // Chama o cálculo dos cards
+    atualizarResumoMensal(); 
+}
+
+// Faz a soma proativa de Vendas vs Despesas no banco
+async function atualizarResumoMensal() {
+    // 1. Pega os valores que estão nos calendários da tela
+    const dataInicioDigitada = document.getElementById('filtro_inicio').value;
+    const dataFimDigitada = document.getElementById('filtro_fim').value;
+
+    const agora = new Date();
+    
+    // 2. Se estiverem vazios, preenche com o mês atual automaticamente
+    let dInicio = dataInicioDigitada;
+    if (!dInicio) {
+        dInicio = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().split('T')[0];
+        document.getElementById('filtro_inicio').value = dInicio;
+    }
+
+    let dFim = dataFimDigitada;
+    if (!dFim) {
+        dFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).toISOString().split('T')[0];
+        document.getElementById('filtro_fim').value = dFim;
+    }
+
+    // 3. Formata para o padrão que o seu Supabase (timestamptz) entende
+    const isoInicio = dInicio + "T00:00:00.000Z";
+    const isoFim = dFim + "T23:59:59.999Z";
+
+    // 4. BUSCA NA TABELA CORRETA (financeiro)
+    // O erro acontecia porque provavelmente estava 'tabela_pedidos' aqui antes
+    const { data: lancamentos, error } = await _supabase
+        .from('financeiro') 
+        .select('valor, tipo')
+        .gte('data', isoInicio)
+        .lte('data', isoFim);
+
+    if (error) {
+        console.error("Erro no Supabase:", error.message);
+        return;
+    }
+
+    let vdas = 0;
+    let dsps = 0;
+
+    if (lancamentos) {
+        lancamentos.forEach(item => {
+            const v = parseFloat(item.valor) || 0;
+            // Se o tipo for "Despesa", ele vai para o card vermelho
+            if (item.tipo && item.tipo.toLowerCase().includes("despesa")) {
+                dsps += v;
+            } else {
+                vdas += v;
+            }
+        });
+    }
+
+    // 5. Atualiza os cards coloridos
+    document.getElementById('resumo_vendas').innerText = vdas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('resumo_despesas').innerText = dsps.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+    document.getElementById('resumo_receita').innerText = (vdas - dsps).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
 
 async function puxarDadosPedido(numOS) {
