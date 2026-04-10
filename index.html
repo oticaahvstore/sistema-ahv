@@ -142,50 +142,76 @@
 
     <div style="margin-bottom: 15px;">
         <button onclick="document.getElementById('aba-financeiro').style.display='none'; document.getElementById('menu-principal').style.display='grid'; document.getElementById('sistema-content').style.display='none';" style="background: #444; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">
-            ⬅️ VOLTAR AO MENU
+            MENU
         </button>
     </div>
 
 <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-left: 3px solid #1a237e; padding-left: 10px;">
-    <div style="color: #1a237e; font-weight: 800; font-size: 16px;">LANÇAMENTO FINANCEIRO (CAIXA)</div>
-    <button onclick="document.getElementById('busca_fin_wrapper').style.display='block'" style="background:none; border:none; cursor:pointer; font-size:18px;" title="Importar Cliente">🔍</button>
+    <div style="color: #1a237e; font-weight: 800; font-size: 16px;">FINANCEIRO/CAIXA</div>
+    <button onclick="document.getElementById('busca_fin_wrapper').style.display='block'" style="background:none; border:none; cursor:pointer; font-size:12px;" title="Importar Cliente">Buscar Cliente</button>
 </div>
 
 <div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-    <div style="display: flex; gap: 15px; align-items: flex-end; justify-content: center; margin-bottom: 15px;">
-        
+
+<div style="display: flex; gap: 5px; align-items: center; justify-content: center; margin-bottom: 10px;">
         <div style="display: flex; flex-direction: column; gap: 4px;">
             <label style="font-size: 10px; font-weight: bold; color: #1a237e; text-transform: uppercase;">Data Início</label>
-            <input type="date" id="filtro_inicio" style="width: 135px; height: 32px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
+            <input type="date" id="filtro_inicio" style="width: 135px; height: 40px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
         </div>
 
         <div style="display: flex; flex-direction: column; gap: 4px;">
             <label style="font-size: 10px; font-weight: bold; color: #1a237e; text-transform: uppercase;">Data Final</label>
-            <input type="date" id="filtro_fim" style="width: 135px; height: 32px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
+            <input type="date" id="filtro_fim" style="width: 135px; height: 40px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
         </div>
 
-        <button onclick="atualizarResumoMensal()" style="background: none; border: 1px solid #1a237e; color: #1a237e; width: 40px; height: 32px; border-radius: 4px; cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Filtrar">
-            🔍
+        <button onclick="atualizarResumoMensal()" style="background: none; border: 1px solid #1a237e; color: #1a237e; width: 36px; height: 20px; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Filtrar">
+            Filtrar
         </button>
     </div>
 
     <div style="display: flex; gap: 8px;">
         <div style="flex: 1; border-top: 4px solid #2e7d32; background: #f9fff9; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-size: 9px; font-weight: bold; color: #2e7d32; margin-bottom: 5px;">VENDAS</div>
-            <div style="font-size: 14px; font-weight: 800; color: #1b5e20;" id="resumo_vendas">R$ 0,00</div>
+            <div style="font-size: 20px; font-weight: bold; color: #2e7d32; margin-bottom: 5px;">VENDAS</div>
+            <div style="font-size: 15px; font-weight: 800; color: #1b5e20;" id="resumo_vendas">R$ 0,00</div>
         </div>
         <div style="flex: 1; border-top: 4px solid #c62828; background: #fff9f9; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-size: 9px; font-weight: bold; color: #c62828; margin-bottom: 5px;">DESPESAS</div>
-            <div style="font-size: 14px; font-weight: 800; color: #b71c1c;" id="resumo_despesas">R$ 0,00</div>
+            <div style="font-size: 20px; font-weight: bold; color: #c62828; margin-bottom: 5px;">DESPESAS</div>
+            <div style="font-size: 15px; font-weight: 800; color: #b71c1c;" id="resumo_despesas">R$ 0,00</div>
         </div>
         <div style="flex: 1; border-top: 4px solid #1565c0; background: #f9fbff; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-size: 9px; font-weight: bold; color: #1565c0; margin-bottom: 5px;">RECEITA</div>
-            <div style="font-size: 14px; font-weight: 800; color: #0d47a1;" id="resumo_receita">R$ 0,00</div>
+            <div style="font-size: 20px; font-weight: bold; color: #1565c0; margin-bottom: 5px;">RECEITA</div>
+<div style="font-size: 15px; font-weight: 800; color: #0d47a1;" id="resumo_receita">R$ 0,00</div>
         </div>
     </div>
 </div>
-    <div id="busca_fin_wrapper" style="display: none; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #1a237e;">
-        <label style="font-size: 9px; font-weight: bold;">SELECIONE O PEDIDO PARA IMPORTAR VALOR:</label>
+
+<div id="area_lista_detalhada" style="display: none; margin-top: 15px; background: #fff; border: 1px solid #999; border-radius: 4px; overflow: hidden;">
+    <div style="background: #1a237e; color: white; padding: 5px; font-size: 10px; font-weight: bold; text-align: center;">
+        Movimento
+    </div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        <thead style="background: #eee;">
+            <tr>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Data</th>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Descrição</th>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: right;">Valor</th>
+            </tr>
+        </thead>
+        <tbody id="corpo_relatorio_financeiro"></tbody>
+    </table>
+</div>
+
+<div style="display: flex; gap: 5px; margin-top: 10px;">
+    <button onclick="alternarLista()" style="flex: 1; background: gray; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        Visualizar/Ocultar Movimento
+    </button>
+    <button onclick="gerarRelatorioFinanceiro()" style="flex: 1; background: gray; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
+        Relatorio
+    </button>
+</div>
+
+<div id="busca_fin_wrapper" style="display: none; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #1a237e;">
+        <label style="font-size: 9px; font-weight: bold;">Selecionar Cliente:</label>
         <select id="busca_fin_cliente" onchange="puxarDadosPedido(this.value); document.getElementById('busca_fin_wrapper').style.display='none';" style="width: 100%; height: 35px; border: 1px solid #1a237e; border-radius: 4px;">
             <option value="">-- Selecione o Cliente --</option>
         </select>
@@ -204,10 +230,12 @@
                 <select id="fin_tipo_pag" style="width: 100%; height: 26px; border: 1px solid #999; font-size: 12px;">
                     <option value="Dinheiro">Dinheiro</option>
                     <option value="Pix">Pix</option>
-                    <option value="Boleto">Boleto</option>
-                    <option value="Carnê">Carnê</option>
+                    <option value="Débito">Débito</option>
                     <option value="Cartão Crédito">Cartão Crédito</option>
-                    <option value="Despesa">⚠️ DESPESA / SAÍDA</option>
+                    <option value="Despesa">Lentes</option>
+                    <option value="Despesa">Montagens</option>
+                    <option value="Despesa">Logistica</option>
+                    <option value="Despesa">Impostos/Taxas</option>
                 </select>
             </div>
 
@@ -224,7 +252,7 @@
             <div style="width: 85px;">
                 <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Intervalo</label>
                 <div style="display: flex; align-items: center; gap: 2px;">
-                    <input type="number" id="fin_intervalo" value="30" oninput="gerarParcelasVideo()" style="width: 100%; height: 26px; border: 1px solid #999; text-align: center;">
+                    <input type="number" id="fin_intervalo" value="30" oninput="gerarParcelasVideo()" style="width: 90%; height: 26px; border: 1px solid #999; text-align: center;">
                     <span style="font-size: 10px;">Dias</span>
                 </div>
             </div>
@@ -238,18 +266,18 @@
                 <input type="date" id="fin_data" style="width: 100%; height: 26px; border: 1px solid #999;">
             </div>
             <div style="flex: 1;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Descrição / Motivo</label>
-                <input type="text" id="fin_desc" placeholder="Nome do cliente ou serviço" style="width: 100%; height: 26px; border: 1px solid #999; padding-left: 5px;">
+                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Descrição</label>
+                <input type="text" id="fin_desc" placeholder="" style="width: 100%; height: 26px; border: 1px solid #999; padding-left: 5px;">
             </div>
         </div>
 
         <div style="background: #ccc; padding: 1px; border-radius: 2px;">
-            <div style="font-size: 11px; font-weight: bold; padding: 4px; color: #1a237e; background: #dcdcdc;">Parcelas Lançadas</div>
+            <div style="font-size: 11px; font-weight: bold; padding: 4px; color: #1a237e; background: #dcdcdc;">Parcelas</div>
             <div style="background: white; min-height: 130px; max-height: 180px; overflow-y: auto; border: 1px solid #999;">
                 <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
                     <thead style="background: #f0f0f0;">
                         <tr>
-                            <th style="border: 1px solid #ccc; padding: 4px; text-align: left; width: 30px;">N.</th>
+                            <th style="border: 1px solid #ccc; padding: 4px; text-align: left; width: 30px;">Nº</th>
                             <th style="border: 1px solid #ccc; padding: 4px; text-align: left;">Vencimento</th>
                             <th style="border: 1px solid #ccc; padding: 4px; text-align: left;">Valor</th>
                         </tr>
@@ -273,7 +301,7 @@
 
     <img src="https://i.ibb.co/hxp4j2T9/logo.png" alt="Logo" style="height: 120px; margin-bottom: 20px;">
     <div class="login-box">
-        <h3>ACESSAR SISTEMA</h3>
+        <h3>LOGIN</h3>
         <input type="text" id="user_login" placeholder="Usuário" onkeyup="if(event.key === 'Enter') document.getElementById('pass_login').focus()">
         <input type="password" id="pass_login" placeholder="Senha" onkeyup="if(event.key === 'Enter') fazerLogin()">
         <button onclick="fazerLogin()">ENTRAR</button>
@@ -328,7 +356,7 @@
     <!-- BOTÕES DE NAVEGAÇÃO ORIGINAIS (ESCONDIDOS POIS AGORA USA O MENU DE BLOCOS) -->
     <div class="no-print" style="display: none; gap: 5px; margin-bottom: 10px; width: 100%;">
         <button onclick="abrirAba('vendas')" id="btn-vendas" style="flex: 1; height: 45px; cursor: pointer; font-weight: bold; background: #1a237e; color: white; border: none; border-radius: 6px;">📋 PEDIDOS / VENDAS</button>
-        <button onclick="abrirAba('estoque')" id="btn-estoque" style="flex: 1; height: 45px; cursor: pointer; font-weight: bold; background: #eee; color: #333; border: 1px solid #ccc; border-radius: 6px;">📥 ENTRADA DE ESTOQUE</button>
+        <button onclick="abrirAba('estoque')" id="btn-estoque" style="flex: 1; height: 45px; cursor: pointer; font-weight: bold; background: #eee; color: #333; border: 1px solid #ccc; border-radius: 6px;">📥 ENTRADA ESTOQUE</button>
     </div>
 
     <!-- ABA DE ESTOQUE ORIGINAL -->
@@ -403,6 +431,9 @@
             <div class="store-info">
                 <b>ÓTICA AHV STORE</b><br>
                 CNPJ: 58.938.512/0001-83<br>
+                Rua: Nebulosas, 700 / Cep: 08330-430<br>
+                Bairro: Cidade Satelite Santa Barbara<br>
+                Cidade: São Paulo / SP<br>
                 WhatsApp: (11) 94854-5043 / (11) 96438-0652
             </div>
         </div>
@@ -794,7 +825,7 @@ function abrirAba(nome) {
 
 const sf = document.getElementById('busca_fin_cliente'); // O novo seletor do financeiro
     if(sf && data) {
-        sf.innerHTML = '<option value="">-- Selecione o Cliente --</option>';
+        sf.innerHTML = '<option value=""></option>';
         data.forEach(p => sf.add(new Option(`${p.num_os} | ${p.nome_cliente}`, p.num_os)));
     }
     // --- FIM DA INSERÇÃO ---
@@ -1164,62 +1195,111 @@ function irParaFinanceiro() {
 
 // Faz a soma proativa de Vendas vs Despesas no banco
 async function atualizarResumoMensal() {
-    // 1. Pega os valores que estão nos calendários da tela
-    const dataInicioDigitada = document.getElementById('filtro_inicio').value;
-    const dataFimDigitada = document.getElementById('filtro_fim').value;
-
+    const dInicio = document.getElementById('filtro_inicio').value;
+    const dFim = document.getElementById('filtro_fim').value;
     const agora = new Date();
     
-    // 2. Se estiverem vazios, preenche com o mês atual automaticamente
-    let dInicio = dataInicioDigitada;
-    if (!dInicio) {
-        dInicio = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().split('T')[0];
-        document.getElementById('filtro_inicio').value = dInicio;
-    }
+    let inicio = dInicio || new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().split('T')[0];
+    let fim = dFim || new Date(agora.getFullYear(), agora.getMonth() + 1, 0).toISOString().split('T')[0];
 
-    let dFim = dataFimDigitada;
-    if (!dFim) {
-        dFim = new Date(agora.getFullYear(), agora.getMonth() + 1, 0).toISOString().split('T')[0];
-        document.getElementById('filtro_fim').value = dFim;
-    }
-
-    // 3. Formata para o padrão que o seu Supabase (timestamptz) entende
-    const isoInicio = dInicio + "T00:00:00.000Z";
-    const isoFim = dFim + "T23:59:59.999Z";
-
-    // 4. BUSCA NA TABELA CORRETA (financeiro)
-    // O erro acontecia porque provavelmente estava 'tabela_pedidos' aqui antes
     const { data: lancamentos, error } = await _supabase
-        .from('financeiro') 
-        .select('valor, tipo')
-        .gte('data', isoInicio)
-        .lte('data', isoFim);
+        .from('financeiro')
+        .select('valor, tipo, descricao, data')
+        .gte('data', inicio + "T00:00:00.000Z")
+        .lte('data', fim + "T23:59:59.999Z")
+        .order('data', { ascending: true });
 
-    if (error) {
-        console.error("Erro no Supabase:", error.message);
-        return;
-    }
+    if (error) return console.error(error);
 
-    let vdas = 0;
-    let dsps = 0;
+    let vdas = 0, dsps = 0;
+    const corpoTabela = document.getElementById('corpo_relatorio_financeiro');
+    corpoTabela.innerHTML = ""; // Limpa a lista antes de preencher
 
     if (lancamentos) {
         lancamentos.forEach(item => {
             const v = parseFloat(item.valor) || 0;
-            // Se o tipo for "Despesa", ele vai para o card vermelho
-            if (item.tipo && item.tipo.toLowerCase().includes("despesa")) {
-                dsps += v;
-            } else {
-                vdas += v;
-            }
+            const isDespesa = item.tipo === "Despesa";
+            
+            if (isDespesa) dsps += v;
+            else vdas += v;
+
+            // CRIA A LINHA NA TABELA DA TELA
+            const tr = document.createElement('tr');
+            tr.style.borderBottom = "1px solid #eee";
+            tr.innerHTML = `
+                <td style="padding: 8px;">${new Date(item.data).toLocaleDateString('pt-BR')}</td>
+                <td style="padding: 8px;">${item.descricao || '-'}</td>
+                <td style="padding: 8px; text-align: right; color: ${isDespesa ? 'red' : 'green'}; font-weight: bold;">
+                    R$ ${v.toFixed(2).replace('.', ',')}
+                </td>
+            `;
+            corpoTabela.appendChild(tr);
         });
     }
 
-    // 5. Atualiza os cards coloridos
     document.getElementById('resumo_vendas').innerText = vdas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     document.getElementById('resumo_despesas').innerText = dsps.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     document.getElementById('resumo_receita').innerText = (vdas - dsps).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
 }
+
+// FUNÇÃO PARA IMPRIMIR O RELATÓRIO COM A LISTA
+
+function gerarRelatorioFinanceiro() {
+    // 1. Pega os valores totais dos cards
+    var vdasTotal = document.getElementById('resumo_vendas').innerText;
+    var dspsTotal = document.getElementById('resumo_despesas').innerText;
+    var rectTotal = document.getElementById('resumo_receita').innerText;
+    
+    // 2. Prepara para separar as descrições
+    var linhasVendas = "";
+    var linhasDespesas = "";
+
+    // 3. Pega as linhas da tabela que está na tela e separa o que é venda do que é gasto
+    var linhasAtuais = document.querySelectorAll('#corpo_relatorio_financeiro tr');
+    
+    linhasAtuais.forEach(function(tr) {
+        var texto = tr.innerHTML;
+        // Se o valor na linha for vermelho (contém 'red'), mandamos para o bloco de Despesas
+        if (texto.indexOf('red') !== -1) {
+            linhasDespesas += "<tr>" + texto + "</tr>";
+        } else {
+            linhasVendas += "<tr>" + texto + "</tr>";
+        }
+    });
+
+    var janela = window.open('', '', 'width=900,height=700');
+    
+    // 4. Monta o Layout que você pediu
+    var html = "<html><head><style>";
+    html += "body{font-family:sans-serif; padding:20px;}";
+    html += "table{width:100%; border-collapse:collapse; margin-bottom:20px;}";
+    html += "th,td{padding:8px; border-bottom:1px solid #eee; font-size:12px;}";
+    html += ".titulo-secao{background:#f0f0f0; font-weight:bold; padding:10px; border-left:5px solid #1a237e; margin-bottom:5px;}";
+    html += ".total-bloco{text-align:right; font-weight:bold; padding:10px; font-size:14px;}";
+    html += "</style></head><body>";
+    html += "<h2 style='text-align:center'>RELATÓRIO FINANCEIRO - ÓTICA AHV</h2>";
+
+    // SEÇÃO DE VENDAS
+    html += "<div class='titulo-secao'>VENDAS</div>";
+    html += "<table><thead><tr><th>Data</th><th>Descrição</th><th style='text-align:right'>Valor</th></tr></thead>";
+    html += "<tbody>" + (linhasVendas || "<tr><td colspan='3'>Sem lançamentos</td></tr>") + "</tbody></table>";
+    html += "<div class='total-bloco' style='color:green'>Total Vendas: " + vdasTotal + "</div>";
+
+    // SEÇÃO DE DESPESAS
+    html += "<div class='titulo-secao'>DESPESAS</div>";
+    html += "<table><thead><tr><th>Data</th><th>Descrição</th><th style='text-align:right'>Valor</th></tr></thead>";
+    html += "<tbody>" + (linhasDespesas || "<tr><td colspan='3'>Sem lançamentos</td></tr>") + "</tbody></table>";
+    html += "<div class='total-bloco' style='color:red'>Total Despesas: " + dspsTotal + "</div>";
+
+    // RECEITA FINAL
+    html += "<hr><div style='text-align:right; font-size:18px;'><b>RECEITA: <span style='color:blue'>" + rectTotal + "</span></b></div>";
+
+    html += "<script>window.print();<\/script></body></html>";
+
+    janela.document.write(html);
+    janela.document.close();
+}
+
 
 async function puxarDadosPedido(numOS) {
     // SE CLICAR NO ESPAÇO EM BRANCO, LIMPA TUDO E PARA
@@ -1537,6 +1617,16 @@ function enviarWhatsApp() {
 
     } catch (e) {
         alert("Erro ao preparar mensagem. Verifique se os dados do cliente foram preenchidos.");
+    }
+}
+
+
+function alternarLista() {
+    var area = document.getElementById('area_lista_detalhada');
+    if (area.style.display === "none") {
+        area.style.display = "block";
+    } else {
+        area.style.display = "none";
     }
 }
 
