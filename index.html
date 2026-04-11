@@ -1296,12 +1296,22 @@ function gerarRelatorioFinanceiro() {
 
     html += "<script>window.print();<\/script></body></html>";
 
-    // Cria um "link" invisível com o conteúdo do relatório
-    var blob = new Blob([html], { type: 'text/html' });
-    var url = URL.createObjectURL(blob);
-    
-    // Abre o relatório diretamente em uma nova aba
-    window.open(url, '_blank');
+    // 1. Guarda o conteúdo original do seu app
+    var conteudoOriginal = document.body.innerHTML;
+
+    // 2. Substitui o corpo do app pelo HTML do relatório
+    document.body.innerHTML = html;
+
+    // 3. Dispara a impressão (o Android/iOS vai abrir a tela de PDF)
+    window.print();
+
+    // 4. Quando fechar a tela de impressão, o app volta ao normal
+    // Usamos um pequeno atraso para o sistema não bugar
+    setTimeout(function() {
+        document.body.innerHTML = conteudoOriginal;
+        // Recarrega os eventos dos botões, se necessário
+        window.location.reload(); 
+    }, 1000);
 }
 
 
