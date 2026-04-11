@@ -1294,11 +1294,12 @@ function gerarRelatorioFinanceiro() {
     // RECEITA FINAL
     html += "<hr><div style='text-align:right; font-size:18px;'><b>RECEITA: <span style='color:blue'>" + rectTotal + "</span></b></div>";
 
-     html += "<script>window.print();<\/script></body></html>";
+    html += "<script>window.print();<\/script></body></html>";
 
     janela.document.write(html);
     janela.document.close();
 }
+
 
 async function puxarDadosPedido(numOS) {
     // SE CLICAR NO ESPAÇO EM BRANCO, LIMPA TUDO E PARA
