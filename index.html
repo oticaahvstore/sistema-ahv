@@ -1267,11 +1267,14 @@ function gerarRelatorioFinanceiro() {
         }
     });
 
-    var janela = window.open('', '', 'width=900,height=700');
-    
-    // 4. Monta o Layout que você pediu
+    // --- DAQUI PARA BAIXO É O QUE MUDA PARA RESOLVER O APP ---
+
+    // Guardamos o sistema original para ele voltar depois
+    var conteudoOriginal = document.body.innerHTML;
+
+    // Monta o Layout do Relatório
     var html = "<html><head><style>";
-    html += "body{font-family:sans-serif; padding:20px;}";
+    html += "body{font-family:sans-serif; padding:20px; background:white;}";
     html += "table{width:100%; border-collapse:collapse; margin-bottom:20px;}";
     html += "th,td{padding:8px; border-bottom:1px solid #eee; font-size:12px;}";
     html += ".titulo-secao{background:#f0f0f0; font-weight:bold; padding:10px; border-left:5px solid #1a237e; margin-bottom:5px;}";
@@ -1279,27 +1282,36 @@ function gerarRelatorioFinanceiro() {
     html += "</style></head><body>";
     html += "<h2 style='text-align:center'>RELATÓRIO FINANCEIRO - ÓTICA AHV</h2>";
 
-    // SEÇÃO DE VENDAS
     html += "<div class='titulo-secao'>VENDAS</div>";
     html += "<table><thead><tr><th>Data</th><th>Descrição</th><th style='text-align:right'>Valor</th></tr></thead>";
     html += "<tbody>" + (linhasVendas || "<tr><td colspan='3'>Sem lançamentos</td></tr>") + "</tbody></table>";
     html += "<div class='total-bloco' style='color:green'>Total Vendas: " + vdasTotal + "</div>";
 
-    // SEÇÃO DE DESPESAS
     html += "<div class='titulo-secao'>DESPESAS</div>";
     html += "<table><thead><tr><th>Data</th><th>Descrição</th><th style='text-align:right'>Valor</th></tr></thead>";
     html += "<tbody>" + (linhasDespesas || "<tr><td colspan='3'>Sem lançamentos</td></tr>") + "</tbody></table>";
     html += "<div class='total-bloco' style='color:red'>Total Despesas: " + dspsTotal + "</div>";
 
-    // RECEITA FINAL
     html += "<hr><div style='text-align:right; font-size:18px;'><b>RECEITA: <span style='color:blue'>" + rectTotal + "</span></b></div>";
+    html += "</body></html>";
 
-    html += "<script>window.print();<\/script></body></html>";
+    // Substitui a tela do sistema pelo relatório
+    document.body.innerHTML = html;
 
-    janela.document.write(html);
-    janela.document.close();
+    // Chama a ponte de impressão do Android Studio (AndroidPrint)
+    if (window.AndroidPrint) {
+        AndroidPrint.printTokens();
+    } else {
+        window.print();
+    }
+
+    // Após 1 segundo, volta o sistema financeiro para a tela
+    setTimeout(function() {
+        document.body.innerHTML = conteudoOriginal;
+        // Se os botões pararem de funcionar ao voltar, remova o "//" da linha abaixo:
+        // window.location.reload();
+    }, 1000);
 }
-
 
 async function puxarDadosPedido(numOS) {
     // SE CLICAR NO ESPAÇO EM BRANCO, LIMPA TUDO E PARA
