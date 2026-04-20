@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sistema de Pedidos - ÓTICA AHV STORE</title>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <style>
         :root { 
             --primary: #1a237e; 
@@ -29,8 +30,8 @@
         /* --- ESTILOS DO MENU DE BLOCOS (DASHBOARD) --- */
         #menu-principal {
             display: none;
-            width: 50%;
-            max-width: 2000px;
+            width: 100%;
+            max-width: 1000px;
             padding: 20px;
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
@@ -60,19 +61,19 @@
         .bloco-label { font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
         .bloco-icone { font-size: 45px; opacity: 0.9; }
 
-        .cor-pedidos { background-color: #0047aB; } 
-        .cor-entradas { background-color: #0047aB; }
-        .cor-mei { background-color: #0047aB; }
-        .cor-vazio { background-color: #f5f5f5; color: #bbb; border: 2px dashed #ddd; cursor: default; }
+        .cor-pedidos { background-color: #6495ed; } 
+        .cor-entradas { background-color: #6495ed; }
+        .cor-mei { background-color: #6495ed; }
+        .cor-vazio { background-color: #6495ed; color: #bbb; border: 2px dashed #ddd; cursor: default; }
 
         /* --- FIM DO MENU DE BLOCOS --- */
 
         #login-screen { 
-            position: fixed; inset: 0; background: #ffffff; z-index: 9999; 
+            position: fixed; inset: 0; background: #fbfbf9; z-index: 9999; 
             display: flex; flex-direction: column; align-items: center; justify-content: center; 
         }
         .login-box { 
-            background: #ffffff; padding: 35px; border-radius: 12px; 
+            background: #fbfbf9; padding: 35px; border-radius: 12px; 
             display: flex; flex-direction: column; gap: 15px; width: 340px; 
             border: 2px solid #999; 
             box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
@@ -186,19 +187,37 @@
     </div>
 </div>
 
-<div id="area_lista_detalhada" style="display: none; margin-top: 15px; background: #fff; border: 1px solid #999; border-radius: 4px; overflow: hidden;">
-    <div style="background: #1a237e; color: white; padding: 5px; font-size: 10px; font-weight: bold; text-align: center;">
-        Movimento
+<div id="area_entradas" style="display: none; margin-top: 15px; background: #fff; border: 1px solid #999; border-radius: 4px; overflow: hidden;">
+    <div style="background: #2e7d32; color: white; padding: 5px; font-size: 10px; font-weight: bold; text-align: center;">
+        ENTRADAS (RECEITAS)
     </div>
     <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-        <thead style="background: #eee;">
+        <thead style="background: #f0fdf4;">
             <tr>
                 <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Data</th>
                 <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Descrição</th>
                 <th style="border: 1px solid #ccc; padding: 5px; text-align: right;">Valor</th>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: center;">Ação</th>
             </tr>
         </thead>
-        <tbody id="corpo_relatorio_financeiro"></tbody>
+        <tbody id="corpo_entradas"></tbody>
+    </table>
+</div>
+
+<div id="area_saidas" style="display: none; margin-top: 15px; background: #fff; border: 1px solid #999; border-radius: 4px; overflow: hidden;">
+    <div style="background: #c62828; color: white; padding: 5px; font-size: 10px; font-weight: bold; text-align: center;">
+        SAÍDAS (DESPESAS)
+    </div>
+    <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
+        <thead style="background: #fef2f2;">
+            <tr>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Data</th>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Descrição</th>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: right;">Valor</th>
+                <th style="border: 1px solid #ccc; padding: 5px; text-align: center;">Ação</th>
+            </tr>
+        </thead>
+        <tbody id="corpo_saidas"></tbody>
     </table>
 </div>
 
@@ -300,7 +319,7 @@
 
     </div> </div> <div id="login-screen">
 
-    <img src="https://i.ibb.co/hxp4j2T9/logo.png" alt="Logo" style="height: 120px; margin-bottom: 20px;">
+    <img src="https://i.ibb.co/hxp4j2T9/logo.png" alt="Logo" style="height: 200px; margin-bottom: 1px;">
     <div class="login-box">
         <h3>LOGIN</h3>
         <input type="text" id="user_login" placeholder="Usuário" onkeyup="if(event.key === 'Enter') document.getElementById('pass_login').focus()">
@@ -443,13 +462,16 @@
             <div class="store-info">
                 <b>ÓTICA AHV STORE</b><br>
                 CNPJ: 58.938.512/0001-83<br>
+                Rua: Nebulosas, 700 / Cep: 08330-430<br>
+                Bairro: Cidade Satelite Santa Barbara<br>
+                Cidade: São Paulo / SP<br>
                 WhatsApp: (11) 94854-5043 / (11) 96438-0652
             </div>
         </div>
 
         <div class="section-title cliente-titulo">Dados do Cliente</div>
         <div class="eye-row">
-            <div class="input-group" style="flex: 0.6;"><label>Data</label><input type="date" id="data_os"></div>
+            <div class="input-group" style="flex: 0.6;"><label>Data</label><input type="date" id="data_os" onchange="calcularPrevisao()"></div>
             <div class="input-group" style="flex: 0.5;"><label>O.S. Nº</label><input type="text" id="num_os" style="font-weight: bold; color: red;"></div>
             <div class="input-group" style="flex: 1.5;"><label>Nome Completo</label><input type="text" id="nome_cliente"></div>
             <div class="input-group sensivel" style="flex: 0.8;"><label>CPF</label><input type="text" id="cpf_cliente" maxlength="14" oninput="mascaraCPF(this)"></div>
@@ -466,6 +488,28 @@
             <div class="input-group"><label>Cidade</label><input type="text" id="cid_cliente"></div>
             <div class="input-group" style="flex: 0.3;"><label>UF</label><input type="text" id="uf_cliente" maxlength="2"></div>
         </div>
+
+<div class="eye-row">
+    <div class="input-group" style="flex:1;">
+        <label>Status</label>
+            <select id="status_pedido" onchange="verificarMudancaStatus()">
+            <option value="Aguardando">Aguardando</option>
+            <option value="Produção">Em Produção</option>
+            <option value="Pronto">Pronto</option>
+            <option value="Entregue">Entregue</option>
+        </select>
+    </div>
+
+    <div class="input-group" style="flex:1;">
+        <label>Previsão Entrega</label>
+        <input type="date" id="data_previsao" onchange="verificarAtraso()">
+    </div>
+
+    <div class="input-group" style="flex:1;">
+        <label>Dias Prazo</label>
+        <input type="number" id="dias_prazo" value="3" oninput="calcularPrevisao()">
+    </div>
+</div>
 
         <div class="section-title">Prescrição Longe</div>
 <div class="eye-row">
@@ -520,6 +564,7 @@
             <div class="input-group" style="flex: 2.2;"><label>Lente</label><select id="nome_lente_oe" onchange="buscarPorNome('oe')"><option value=""></option></select></div>
             <div class="input-group" style="flex: 1.2;"><label>Tratamento</label><select id="ar_oe" onchange="atualizarPrecoAutomatico()"><option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option></select></div>
             <div class="input-group" style="flex: 0.8;"><label>Laboratório</label><select id="lab_oe"><option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option></select></div>
+
         </div>
 
         <div class="section-title">Armação e Medidas Técnicas</div>
@@ -566,7 +611,12 @@
 
 <script>
     const _supabase = supabase.createClient('https://gxeuheqhpsapigyozanu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4ZXVoZXFocHNhcGlneW96YW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzU3NDcsImV4cCI6MjA4OTc1MTc0N30.h_Yqrj959cpXFKSYO3wrvGQ7RXO5QEL2NeRy1QqfQJc');
-    let editandoPedido = false; 
+
+    let idEdicao = null;
+    
+    let editandoPedido = false;
+    let statusAnterior = ""; 
+
     let timerInatividade;
     const TEMPO_LIMITE = 300000; 
 
@@ -660,8 +710,13 @@ async function carregarPedidoSelecionado(numOS) {
             await filtrarLentes('oe');
             document.getElementById('nome_lente_oe').value = data.nome_lente_oe;
         }
-        
+                
+        statusAnterior = document.getElementById('status_pedido')?.value || "";
+
         editandoPedido = true;
+
+        verificarAtraso();
+
     }
 }
 
@@ -708,7 +763,19 @@ async function abrirRelatorioMEI() {
 
         if (error) throw error;
 
-        const totalFaturado = data.reduce((acc, item) => acc + parseFloat(item.vlr_total || 0), 0);
+        let totalFaturado = 0;
+let quantidade = 0;
+
+data.forEach(item => {
+    const valor = parseFloat(item.vlr_total) || 0;
+
+    if (valor > 0) {
+        totalFaturado += valor;
+        quantidade++;
+    }
+});
+
+const ticketMedio = quantidade > 0 ? (totalFaturado / quantidade) : 0;
         const limiteMEI = 81000;
         const saldoRestante = limiteMEI - totalFaturado;
 
@@ -757,12 +824,19 @@ async function abrirRelatorioMEI() {
                     </tbody>
                 </table>
 
-                <div class="resumo">
-                    <p><strong>Faturamento Bruto:</strong> R$ ${totalFaturado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                    <p><strong>Limite Anual MEI:</strong> R$ ${limiteMEI.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                    <p><strong>Saldo Disponível para o Ano:</strong> R$ ${saldoRestante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-                </div>
+<div class="resumo">
+    <p><strong>Faturamento Bruto:</strong> R$ ${totalFaturado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
 
+    <p><strong>Quantidade de Vendas:</strong> ${quantidade}</p>
+
+    <p><strong>Ticket Médio:</strong> R$ ${ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+
+    <hr>
+
+    <p><strong>Limite Anual MEI:</strong> R$ ${limiteMEI.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+
+    <p><strong>Saldo Disponível:</strong> R$ ${saldoRestante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+</div>
                 <div class="footer">
                     <p>Documento gerado em ${new Date().toLocaleString('pt-BR')}</p>
                     <button class="no-print" onclick="window.print()" style="padding: 10px 20px; cursor: pointer; margin-top: 20px;">Imprimir Agora</button>
@@ -895,6 +969,9 @@ function calcularTotal() {
     // Removemos o "R$" e mantemos o ponto decimal para o banco entender
     const total = (armacao + lentes - desconto).toFixed(2);
     document.getElementById('vlr_total').value = total; 
+
+atualizarStatusAutomatico();
+
 }
 
 
@@ -933,16 +1010,16 @@ window.onload = function() {
 function preencherSeletores() {
     const fmt = (n) => (n > 0 ? "+" : "") + n.toFixed(2).replace('.', ',');
     
-    // Preenche Esférico (+15 a -20)
+    // Preenche Esférico (+8 a -12)
     document.querySelectorAll('.sel-esf').forEach(s => { 
         s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 6; i >= -12; i -= 0.25) s.add(new Option(i === 0 ? "0,00" : fmt(i), i.toFixed(2))); 
+        for (let i = 8; i >= -12; i -= 0.25) s.add(new Option(i === 0 ? "0,00" : fmt(i), i.toFixed(2))); 
     });
     
     // Preenche Cilíndrico (0 a -8)
     document.querySelectorAll('.sel-cil').forEach(s => { 
         s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 0; i >= -3; i -= 0.25) s.add(new Option(i.toFixed(2).replace('.', ','), i.toFixed(2))); 
+        for (let i = 0; i >= -6; i -= 0.25) s.add(new Option(i.toFixed(2).replace('.', ','), i.toFixed(2))); 
     });
     
     // Preenche Eixo (0 a 180)
@@ -954,7 +1031,7 @@ function preencherSeletores() {
     // Preenche Adição (0 a 4.5)
     document.querySelectorAll('.sel-add').forEach(s => { 
         s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 0; i <= 4.5; i += 0.25) s.add(new Option(fmt(i), i.toFixed(2))); 
+        for (let i = 0; i <= 3.5; i += 0.25) s.add(new Option(fmt(i), i.toFixed(2))); 
     });
 }
 
@@ -1289,6 +1366,7 @@ function irParaFinanceiro() {
 }
 
 // Faz a soma proativa de Vendas vs Despesas no banco
+
 async function atualizarResumoMensal() {
     const dInicio = document.getElementById('filtro_inicio').value;
     const dFim = document.getElementById('filtro_fim').value;
@@ -1299,7 +1377,7 @@ async function atualizarResumoMensal() {
 
     const { data: lancamentos, error } = await _supabase
         .from('financeiro')
-        .select('valor, tipo, descricao, data')
+        .select('id, valor, tipo, descricao, data')
         .gte('data', inicio + "T00:00:00.000Z")
         .lte('data', fim + "T23:59:59.999Z")
         .order('data', { ascending: true });
@@ -1307,18 +1385,23 @@ async function atualizarResumoMensal() {
     if (error) return console.error(error);
 
     let vdas = 0, dsps = 0;
-    const corpoTabela = document.getElementById('corpo_relatorio_financeiro');
-    corpoTabela.innerHTML = ""; // Limpa a lista antes de preencher
+    
+    // Pega as duas novas tabelas
+    const corpoEntradas = document.getElementById('corpo_entradas');
+    const corpoSaidas = document.getElementById('corpo_saidas');
+    
+    corpoEntradas.innerHTML = ""; 
+    corpoSaidas.innerHTML = "";
 
     if (lancamentos) {
         lancamentos.forEach(item => {
             const v = parseFloat(item.valor) || 0;
-            const isDespesa = item.tipo === "Despesa";
+            // Define o que é despesa (Saída)
+            const isDespesa = (item.tipo === "Despesa" || item.tipo === "Lentes" || item.tipo === "Montagens" || item.tipo === "Logistica" || item.tipo === "Impostos/Taxas");
             
             if (isDespesa) dsps += v;
             else vdas += v;
 
-            // CRIA A LINHA NA TABELA DA TELA
             const tr = document.createElement('tr');
             tr.style.borderBottom = "1px solid #eee";
             tr.innerHTML = `
@@ -1327,14 +1410,52 @@ async function atualizarResumoMensal() {
                 <td style="padding: 8px; text-align: right; color: ${isDespesa ? 'red' : 'green'}; font-weight: bold;">
                     R$ ${v.toFixed(2).replace('.', ',')}
                 </td>
+                <td style="padding: 8px; text-align: center;">
+                    <button onclick="prepararEdicao('${item.id}', '${v}', '${item.tipo}', '${item.data.split('T')[0]}', '${item.descricao || ""}')" 
+                            style="background: #1a237e; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
+                        EDITAR
+                    </button>
+                </td>
             `;
-            corpoTabela.appendChild(tr);
+
+            // Envia para a tabela correta com base no tipo
+            if (isDespesa) {
+                tr.style.color = "#c62828"; // Texto Vermelho
+                corpoSaidas.appendChild(tr);
+            } else {
+                tr.style.color = "#2e7d32"; // Texto Verde
+                corpoEntradas.appendChild(tr);
+            }
         });
     }
 
+    // Atualiza os valores nos cards de resumo do topo
     document.getElementById('resumo_vendas').innerText = vdas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     document.getElementById('resumo_despesas').innerText = dsps.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
     document.getElementById('resumo_receita').innerText = (vdas - dsps).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
+}
+
+
+function prepararEdicao(id, valor, tipo, data, descricao) {
+    // 1. Guarda o ID na variável global que criamos lá no topo
+    idEdicao = id;
+
+    // 2. Preenche os campos do formulário com os dados da linha clicada
+    document.getElementById('fin_valor').value = valor;
+    document.getElementById('fin_tipo_pag').value = tipo;
+    document.getElementById('fin_data').value = data;
+    document.getElementById('fin_desc').value = descricao;
+
+    // 3. Muda o texto do botão CONFIRMAR para você saber que está editando
+    // Procure o botão que chama a função salvarTudoNoBanco
+    const btnConfirmar = document.querySelector("button[onclick='salvarTudoNoBanco()']");
+    if (btnConfirmar) {
+        btnConfirmar.innerText = "ATUALIZAR";
+        btnConfirmar.style.background = "#1a237e"; // Muda para azul para destacar
+    }
+
+    // 4. Sobe a página para o formulário aparecer na tela
+    window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 
 // FUNÇÃO PARA IMPRIMIR O RELATÓRIO COM A LISTA
@@ -1350,8 +1471,8 @@ function gerarRelatorioFinanceiro() {
     var linhasDespesas = "";
 
     // 3. Pega as linhas da tabela que está na tela e separa o que é venda do que é gasto
-    var linhasAtuais = document.querySelectorAll('#corpo_relatorio_financeiro tr');
-    
+    var linhasAtuais = document.querySelectorAll('#corpo_entradas tr, #corpo_saidas tr'); 
+   
     linhasAtuais.forEach(function(tr) {
         var texto = tr.innerHTML;
         // Se o valor na linha for vermelho (contém 'red'), mandamos para o bloco de Despesas
@@ -1367,13 +1488,18 @@ function gerarRelatorioFinanceiro() {
     // Guardamos o sistema original para ele voltar depois
     var conteudoOriginal = document.body.innerHTML;
 
-    // Monta o Layout do Relatório
+// Monta o Layout do Relatório
     var html = "<html><head><style>";
     html += "body{font-family:sans-serif; padding:20px; background:white;}";
     html += "table{width:100%; border-collapse:collapse; margin-bottom:20px;}";
     html += "th,td{padding:8px; border-bottom:1px solid #eee; font-size:12px;}";
     html += ".titulo-secao{background:#f0f0f0; font-weight:bold; padding:10px; border-left:5px solid #1a237e; margin-bottom:5px;}";
     html += ".total-bloco{text-align:right; font-weight:bold; padding:10px; font-size:14px;}";
+    
+    // ABAIXO AS REGRAS PARA SUMIR O EDITAR
+    html += "button{display:none !important;}"; 
+    html += "td:last-child, th:last-child{display:none !important;}"; 
+    
     html += "</style></head><body>";
     html += "<h2 style='text-align:center'>RELATÓRIO FINANCEIRO - ÓTICA AHV</h2>";
 
@@ -1544,7 +1670,7 @@ async function baixarParcela(id, numOS) {
 }
 
 async function salvarTudoNoBanco() {
-    // 1. Pega os valores (incluindo a nova Taxa %)
+    // 1. Pega os valores
     const valorBase = parseFloat(document.getElementById('fin_valor').value);
     const taxa = parseFloat(document.getElementById('fin_taxa').value) || 0;
     const qtde = parseInt(document.getElementById('fin_qtde').value) || 1;
@@ -1558,45 +1684,66 @@ async function salvarTudoNoBanco() {
         return;
     }
 
-    // 2. Cálculo Proativo: Aplica a taxa antes de gerar as parcelas para o banco
+    // 2. Cálculo do valor
     const valorComTaxa = valorBase + (valorBase * (taxa / 100));
     const valorParcela = (valorComTaxa / qtde).toFixed(2);
 
-    // 3. Loop para salvar cada parcela individualmente no Supabase
-    for (let i = 0; i < qtde; i++) {
-        let d = new Date(dataInicial + 'T00:00:00');
-        d.setDate(d.getDate() + (i * intervalo));
-
-        const { error } = await _supabase.from('financeiro').insert([{
-            valor: parseFloat(valorParcela),
-            descricao: qtde > 1 ? `${desc} (${i + 1}/${qtde})` : desc,
-            tipo: tipo,
-            data: d.toISOString(),
-            pago: false // Garante que a parcela comece como Pendente
-        }]);
+    // --- LOGICA DE EDIÇÃO ---
+    if (idEdicao) {
+        // Se idEdicao existe, atualizamos apenas este registro específico
+        const { error } = await _supabase
+            .from('financeiro')
+            .update({
+                valor: parseFloat(valorParcela),
+                descricao: desc,
+                tipo: tipo,
+                data: new Date(dataInicial + 'T00:00:00').toISOString()
+            })
+            .eq('id', idEdicao);
 
         if (error) {
-            alert("Erro ao salvar parcela " + (i + 1));
+            alert("Erro ao atualizar o registro.");
             return;
         }
+        alert("✅ Registro atualizado com sucesso!");
+        idEdicao = null; // Reseta a variável de edição
+        document.querySelector("button[onclick='salvarTudoNoBanco()']").innerText = "CONFIRMAR";
+    } 
+    // --- MODO LANÇAMENTO NORMAL (PARCELAS) ---
+    else {
+        for (let i = 0; i < qtde; i++) {
+            let d = new Date(dataInicial + 'T00:00:00');
+            d.setDate(d.getDate() + (i * intervalo));
+
+            const { error } = await _supabase.from('financeiro').insert([{
+                valor: parseFloat(valorParcela),
+                descricao: qtde > 1 ? `${desc} (${i + 1}/${qtde})` : desc,
+                tipo: tipo,
+                data: d.toISOString(),
+                pago: false 
+            }]);
+
+            if (error) {
+                alert("Erro ao salvar parcela " + (i + 1));
+                return;
+            }
+        }
+        alert("✅ Financeiro lançado com sucesso!");
     }
 
-    alert("✅ Financeiro lançado com sucesso!");
-
-    // 4. Limpa os campos para o próximo lançamento
+    // 4. Limpa os campos
     document.getElementById('corpo_parcelas_video').innerHTML = ""; 
     document.getElementById('fin_valor').value = "";
-    document.getElementById('fin_taxa').value = "0"; // Reseta a taxa
+    document.getElementById('fin_taxa').value = "0"; 
     document.getElementById('fin_desc').value = "";
     document.getElementById('fin_data').value = "";
     document.getElementById('res_falta_video').innerText = "0,00";
+    document.getElementById('fin_qtde').value = "1"; // Reseta a quantidade
 
-    // 5. Atualiza a lista visual embaixo automaticamente
-    const numOS = desc.match(/OS (\d+)/)?.[1];
-    if (numOS) puxarDadosPedido(numOS);
-    
-    document.getElementById('busca_fin_wrapper').style.display = 'block';
+    // 5. Atualiza a lista visual
+    atualizarResumoMensal(); // Adicione esta linha para atualizar a tabela de movimento
 }
+
 async function buscarCEP(valor) {
     // Remove qualquer traço ou ponto para deixar só números
     const cep = valor.replace(/\D/g, '');
@@ -1729,12 +1876,132 @@ function enviarWhatsApp() {
 
 
 function alternarLista() {
-    var area = document.getElementById('area_lista_detalhada');
-    if (area.style.display === "none") {
-        area.style.display = "block";
+    const ent = document.getElementById('area_entradas');
+    const sai = document.getElementById('area_saidas');
+    
+    // Se a primeira estiver escondida, mostra as duas. Se não, esconde as duas.
+    const novoEstado = ent.style.display === 'none' ? 'block' : 'none';
+    
+    ent.style.display = novoEstado;
+    sai.style.display = novoEstado;
+    
+}
+
+function prepararEdicao(id, valor, tipo, data, descricao) {
+    idEdicao = id; // Lembra do idEdicao que criamos no topo do script?
+
+    document.getElementById('fin_valor').value = valor;
+    document.getElementById('fin_tipo_pag').value = tipo;
+    document.getElementById('fin_data').value = data;
+    document.getElementById('fin_desc').value = descricao;
+
+    // Muda o botão de confirmar para atualizar
+    const btnConfirmar = document.querySelector("button[onclick='salvarTudoNoBanco()']");
+    btnConfirmar.innerText = "ATUALIZAR REGISTRO";
+    btnConfirmar.style.background = "#1a237e";
+
+    // Rola a página para cima para facilitar a edição
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function calcularPrevisao() {
+    const dataPedido = document.getElementById('data_os').value;
+    const dias = parseInt(document.getElementById('dias_prazo').value) || 0;
+
+    if (!dataPedido) return;
+
+    const data = new Date(dataPedido);
+    data.setDate(data.getDate() + dias);
+
+    const formatada = data.toISOString().split('T')[0];
+    document.getElementById('data_previsao').value = formatada;
+}
+
+function verificarAtraso() {
+    const previsao = document.getElementById('data_previsao').value;
+    const status = document.getElementById('status_pedido').value;
+
+    if (!previsao) return;
+
+    const hoje = new Date();
+    const dataPrev = new Date(previsao);
+
+    const campo = document.getElementById('data_previsao');
+
+    if (status !== "Entregue" && dataPrev < hoje) {
+        campo.style.backgroundColor = "#ffcccc"; // ATRASADO
     } else {
-        area.style.display = "none";
+        campo.style.backgroundColor = "#ccffcc"; // OK
     }
+}
+
+function atualizarStatusAutomatico() {
+    const status = document.getElementById('status_pedido');
+    const total = parseFloat(document.getElementById('vlr_total').value) || 0;
+
+    if (!status) return;
+
+    // Se ainda estiver como "Aguardando" e já tem valor
+    if (status.value === "Aguardando" && total > 0) {
+        status.value = "Produção";
+    }
+}
+
+function enviarWhatsAppStatus() {
+    const nome = document.getElementById('nome_cliente').value || "Cliente";
+    const os = document.getElementById('num_os').value || "---";
+    const valor = document.getElementById('vlr_total').value || "0,00";
+    const data = document.getElementById('data_os').value;
+
+    let telefone = document.getElementById('tel_cliente').value;
+
+    if (!telefone) {
+        alert("Telefone do cliente não preenchido!");
+        return;
+    }
+
+    // Limpar telefone
+    telefone = telefone.replace(/\D/g, '');
+
+    if (!telefone.startsWith("55")) {
+        telefone = "55" + telefone;
+    }
+
+    // Formatando data BR
+    let dataFormatada = "";
+    if (data) {
+        const d = new Date(data);
+        dataFormatada = d.toLocaleDateString('pt-BR');
+    }
+
+    const mensagem = 
+`Olá ${nome}
+
+Seu óculos já está *PRONTO*!
+
+*OS:* ${os}
+*Valor:* R$ ${valor}
+*Data:* ${dataFormatada}
+
+Em breve estaremos lhe entregando!
+A Ótica AHV Store agradece a sua preferência.`;
+
+    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
+
+    window.open(url, '_blank');
+}
+
+function verificarMudancaStatus() {
+    const statusAtual = document.getElementById('status_pedido').value;
+
+    // Se mudou para "Pronto"
+    if (statusAtual === "Pronto" && statusAnterior !== "Pronto") {
+        enviarWhatsAppStatus();
+    }
+
+    statusAnterior = statusAtual;
+
+    verificarAtraso(); // mantém sua lógica de atraso
 }
 
 </script>
