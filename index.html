@@ -428,7 +428,7 @@
         <div id="form-lentes" class="form-estoque" style="display: none; background: white; padding: 20px; border-radius: 12px; border-top: 5px solid #2e7d32; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
             <h3 style="color: #2e7d32;">Lente</h3>
             <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <select id="len_tipo"><option>Tipo...</option><option>Multifocal C.O.</option><option>Visão Simples Surfaçada</option><option>Visão Simples Acabado</option></select>
+                <select id="len_tipo"><option>Tipo...</option><option>Multifocal C.O. PRO</option><option>Visão Simples Surfaçada</option><option>Visão Simples Acabado</option></select>
                 <input type="text" id="len_codigo" placeholder="Código">
                 <input type="text" id="len_nome" placeholder="Nome da Lente" style="grid-column: span 2;">
                 <input type="number" id="len_custo" placeholder="Custo R$">
@@ -550,7 +550,7 @@
         <div class="section-title">Lentes</div>
         <div class="eye-row lentes">
             <div class="eye-label" style="background: #2980b9;">OD</div>
-            <div class="input-group" style="flex: 1.2;"><label>Tipo</label><select id="tipo_lente_od" onchange="filtrarLentes('od')"><option value=""></option><option>Visão Simples Acabado</option><option>Visão Simples Surfaçada</option><option>Synchrony Progressive</option><option>Zeiss Progressive</option><option>VDT Progressive</option><option>Funcional</option><option>Multifocal C.O.</option></select></div>
+            <div class="input-group" style="flex: 1.2;"><label>Tipo</label><select id="tipo_lente_od" onchange="filtrarLentes('od')"><option value=""></option><option>Visão Simples Acabado</option><option>Visão Simples Surfaçada</option><option>Synchrony Progressive</option><option>Zeiss Progressive</option><option>VDT Progressive</option><option>Funcional</option><option>Multifocal C.O. PRO</option></select></div>
             <div class="input-group" style="flex: 0.6;"><label>Cód.</label><input type="text" id="cod_lente_od" oninput="buscarPorCodigo('od')"></div>
             <div class="input-group" style="flex: 2.2;"><label>Lente</label><select id="nome_lente_od" onchange="buscarPorNome('od')"><option value=""></option></select></div>
             <div class="input-group" style="flex: 1.2;"><label>Tratamento</label><select id="ar_od" onchange="atualizarPrecoAutomatico()"><option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option></select></div>
@@ -558,7 +558,7 @@
         </div>
         <div class="eye-row lentes">
             <div class="eye-label" style="background: #2980b9;">OE</div>
-            <div class="input-group" style="flex: 1.2;"><label>Tipo</label><select id="tipo_lente_oe" onchange="filtrarLentes('oe')"><option value=""></option><option>Visão Simples Acabado</option><option>Visão Simples Surfaçada</option><option>Synchrony Progressive</option><option>Zeiss Progressive</option><option>VDT Progressive</option><option>Funcional</option><option>Multifocal C.O.</option></select></div>
+            <div class="input-group" style="flex: 1.2;"><label>Tipo</label><select id="tipo_lente_oe" onchange="filtrarLentes('oe')"><option value=""></option><option>Visão Simples Acabado</option><option>Visão Simples Surfaçada</option><option>Synchrony Progressive</option><option>Zeiss Progressive</option><option>VDT Progressive</option><option>Funcional</option><option>Multifocal C.O. PRO</option></select></div>
             <div class="input-group" style="flex: 0.6;"><label>Cód.</label><input type="text" id="cod_lente_oe" oninput="buscarPorCodigo('oe')"></div>
             <div class="input-group" style="flex: 2.2;"><label>Lente</label><select id="nome_lente_oe" onchange="buscarPorNome('oe')"><option value=""></option></select></div>
             <div class="input-group" style="flex: 1.2;"><label>Tratamento</label><select id="ar_oe" onchange="atualizarPrecoAutomatico()"><option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option></select></div>
