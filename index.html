@@ -1,706 +1,1038 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sistema de Pedidos - ÓTICA AHV STORE</title>
+    <title>ÓTICA AHV STORE - Sistema PDV & Gestão Profissional</title>
+
+    <!-- Tailwind CSS CDN para layout moderno -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Supabase JS SDK -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#f0f3ff',
+                            100: '#e1e7fe',
+                            600: '#253bce',
+                            800: '#1a237e',
+                            900: '#0f144d'
+                        },
+                        gold: '#d4a017',
+                        lens: '#2980b9'
+                    }
+                }
+            }
+        }
+    </script>
+
     <style>
-        :root { 
-            --primary: #1a237e; 
-            --primary-light: #534bae;
-            --secondary: #2e7d32; 
-            --lab: #7b1fa2; 
-            --bg-body: #f0f2f5;
-            --white: #ffffff;
-            --text-dark: #2d3436;
-            --radius: 8px;
-            --shadow: 0 4px 6px rgba(0,0,0,0.1);
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+        * {
+            font-family: 'Inter', sans-serif;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
         }
 
-        * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-        
-        body { 
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
-            background: var(--bg-body); 
-            margin: 0; padding: 10px; display: flex; flex-direction: column; align-items: center; color: var(--text-dark);
+        /* Estilização para impressão A4 e Laboratório */
+        @media print {
+            body {
+                background: white !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            .no-print {
+                display: none !important;
+            }
+            #app-container {
+                display: block !important;
+                width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            .print-page {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+            }
+            body.modo-lab .sensivel,
+            body.modo-lab .financeiro-section {
+                display: none !important;
+            }
+            input, select, textarea {
+                border: 1px solid #333 !important;
+                background: white !important;
+                color: black !important;
+                appearance: none !important;
+            }
         }
 
-        /* --- ESTILOS DO MENU DE BLOCOS (DASHBOARD) --- */
-        #menu-principal {
-            display: none;
-            width: 100%;
-            max-width: 1000px;
-            padding: 20px;
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 20px;
-            margin-top: 20px;
+        .tab-btn.active {
+            background-color: #1a237e;
+            color: #ffffff;
+            font-weight: 700;
+            box-shadow: 0 4px 12px rgba(26, 35, 126, 0.25);
         }
 
-        .bloco-menu {
-            height: 180px;
-            border-radius: 4px;
-            color: white;
-            padding: 25px;
-            cursor: pointer;
-            border: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: space-between;
-            text-align: left;
-            transition: transform 0.2s;
-            box-shadow: var(--shadow);
+        .subtab-btn.active {
+            border-bottom: 3px solid #1a237e;
+            color: #1a237e;
+            font-weight: 800;
         }
-
-        .bloco-menu:hover { transform: scale(1.02); filter: brightness(1.1); }
-        .bloco-titulo { font-size: 26px; font-weight: bold; margin: 0; line-height: 1.1; }
-        .bloco-sub { font-size: 13px; opacity: 0.8; margin-top: 5px; }
-        .bloco-rodape { display: flex; justify-content: space-between; align-items: flex-end; }
-        .bloco-label { font-size: 11px; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
-        .bloco-icone { font-size: 45px; opacity: 0.9; }
-
-        .cor-pedidos { background-color: #6495ed; } 
-        .cor-entradas { background-color: #6495ed; }
-        .cor-mei { background-color: #6495ed; }
-        .cor-vazio { background-color: #6495ed; color: #bbb; border: 2px dashed #ddd; cursor: default; }
-
-        /* --- FIM DO MENU DE BLOCOS --- */
-
-        #login-screen { 
-            position: fixed; inset: 0; background: #fbfbf9; z-index: 9999; 
-            display: flex; flex-direction: column; align-items: center; justify-content: center; 
-        }
-        .login-box { 
-            background: #fbfbf9; padding: 35px; border-radius: 12px; 
-            display: flex; flex-direction: column; gap: 15px; width: 340px; 
-            border: 2px solid #999; 
-            box-shadow: 0 10px 25px rgba(0,0,0,0.05); 
-        }
-        .login-box h3 { color: var(--primary); text-align: center; margin-top: 0; font-weight: 800; }
-        .login-box input { height: 42px; border: 1.5px solid #999; padding: 10px; border-radius: 6px; font-size: 15px; }
-        .login-box button { height: 48px; background: var(--primary); color: white; border: none; font-weight: bold; border-radius: 6px; cursor: pointer; }
-
-        #sistema-content { display: none; width: 210mm; max-width: 100%; } 
-        .toolbar { width: 100%; background: var(--white); padding: 10px 20px; display: flex; gap: 10px; border-radius: 10px; align-items: center; margin-bottom: 10px; box-shadow: var(--shadow); }
-        .search-select { flex: 1; height: 35px; border-radius: 5px; border: 1px solid #ccc; padding: 0 10px; }
-
-        .page { width: 100%; padding: 15px; background: #fff; border-radius: 10px; display: flex; flex-direction: column; border: 1px solid #ddd; }
-        
-        .section-title { 
-            color: var(--primary); font-weight: 800; margin: 8px 0 4px; padding: 4px 10px; 
-            background: rgba(26,35,126,0.04); border-left: 3px solid var(--primary); 
-            text-transform: uppercase; font-size: 10px;
-        }
-        
-        .eye-row { display: flex; align-items: flex-end; gap: 5px; margin-bottom: 4px; background: #fff; padding: 4px; border-radius: 6px; border: 1px solid #999; }
-        .eye-row.perto { background: #fffdf5; border-color: #f1c40f; }
-        .eye-row.lentes { background: #f4f7ff; border-color: #3498db; }
-        
-        .eye-label { background: var(--primary); border-radius: 4px; width: 35px; height: 28px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 11px; }
-        .input-group { display: flex; flex-direction: column; flex: 1; }
-        .input-group label { font-size: 8px; color: #333; font-weight: 700; margin-bottom: 2px; text-transform: uppercase; }
-        
-        select, input, textarea { height: 28px; border: 1px solid #777; border-radius: 4px; font-size: 11px; padding: 0 5px; width: 100%; color: #000; }
-        textarea { height: 45px; padding: 5px; resize: none; }
-        
-        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid var(--primary); padding-bottom: 8px; margin-bottom: 8px; }
-        .logo img { height: 50px; } 
-        .store-info { text-align: right; font-size: 9px; line-height: 1.2; color: #000; }
-        
-        .footer-buttons { display: flex; gap: 10px; margin-top: 15px; justify-content: center; }
-        .btn { width: 50px; height: 45px; border: none; border-radius: 10px; color: white; cursor: pointer; font-size: 20px; display: flex; align-items: center; justify-content: center; }
-        .btn-save { background: var(--secondary); }
-        .btn-print { background: var(--primary); }
-        .btn-lab { background: var(--lab); }
-        .btn-new { background: #607d8b; }
-        #vlr_total { font-weight: 800; background: #2e7d32; color: white; border: none; }
-
-        @media print { 
-            @page { size: A4; margin: 5mm; }
-            body { padding: 0; background: white; } 
-            .no-print { display: none !important; } 
-            #sistema-content { display: block !important; width: 100%; }
-            .page { box-shadow: none; border: none; padding: 0; margin: 0; }
-            .eye-row, select, input, textarea { border: 1px solid #000 !important; -webkit-appearance: none; appearance: none; }
-            input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
-            input[type=number] { -moz-appearance: textfield; }
-            select { background-image: none !important; text-indent: 1px; }
-            .section-title { margin-top: 4px; background: #eee !important; border: 1px solid #000 !important; }
-            body.modo-lab .financeiro-section, body.modo-lab .sensivel { display: none !important; }
-
-/* Estilo da Aba Financeira */
-.aba-financeira { background: white; padding: 20px; border-radius: 8px; margin-top: 10px; border: 1px solid #ccc; }
-.btn-salvar-fin { background: #2e7d32; color: white; border: none; padding: 15px; cursor: pointer; width: 100%; font-weight: bold; border-radius: 5px; }
-        }
-
-
     </style>
 </head>
-<body>
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col">
 
-<div id="aba-financeiro" class="page" style="display:none; padding: 20px; background: #fff; border: 1px solid #ddd; border-radius: 10px; width: 100%; max-width: 600px; margin: 20px auto;">
+<!-- TELA DE LOGIN -->
+<div id="login-screen" class="fixed inset-0 bg-slate-900/90 backdrop-blur-md z-50 flex items-center justify-center p-4">
+    <div class="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-md border border-slate-100 flex flex-col items-center">
+        <img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Ótica AHV Logo" class="h-28 object-contain mb-6 drop-shadow">
+        <h2 class="text-2xl font-black text-brand-800 tracking-tight mb-1">ÓTICA AHV STORE</h2>
+        <p class="text-xs text-slate-500 mb-6 font-medium">Acesso Restrito ao Sistema PDV</p>
 
-    <div style="margin-bottom: 15px;">
-        <button onclick="document.getElementById('aba-financeiro').style.display='none'; document.getElementById('menu-principal').style.display='grid'; document.getElementById('sistema-content').style.display='none';" style="background: #444; color: #fff; border: none; padding: 8px 12px; border-radius: 5px; font-weight: bold; cursor: pointer; font-size: 11px;">
-            MENU
-        </button>
-    </div>
-
-<div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; border-left: 3px solid #1a237e; padding-left: 10px;">
-    <div style="color: #1a237e; font-weight: 800; font-size: 16px;">FINANCEIRO/CAIXA</div>
-    <button onclick="document.getElementById('busca_fin_wrapper').style.display='block'" style="background:none; border:none; cursor:pointer; font-size:12px;" title="Importar Cliente">Buscar Cliente</button>
-</div>
-
-<div style="background: #ffffff; padding: 15px; border-radius: 8px; margin-bottom: 15px; border: 1px solid #ddd; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-
-<div style="display: flex; gap: 5px; align-items: center; justify-content: center; margin-bottom: 10px;">
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-size: 10px; font-weight: bold; color: #1a237e; text-transform: uppercase;">Data Início</label>
-            <input type="date" id="filtro_inicio" style="width: 135px; height: 40px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
-        </div>
-
-        <div style="display: flex; flex-direction: column; gap: 4px;">
-            <label style="font-size: 10px; font-weight: bold; color: #1a237e; text-transform: uppercase;">Data Final</label>
-            <input type="date" id="filtro_fim" style="width: 135px; height: 40px; border: 1px solid #ccc; border-radius: 4px; padding: 0 5px;">
-        </div>
-
-        <button onclick="atualizarResumoMensal()" style="background: none; border: 1px solid #1a237e; color: #1a237e; width: 36px; height: 20px; border-radius: 4px; cursor: pointer; font-size: 10px; display: flex; align-items: center; justify-content: center; transition: 0.3s;" title="Filtrar">
-            Filtrar
-        </button>
-    </div>
-
-    <div style="display: flex; gap: 8px;">
-        <div style="flex: 1; border-top: 4px solid #2e7d32; background: #f9fff9; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-size: 20px; font-weight: bold; color: #2e7d32; margin-bottom: 5px;">VENDAS</div>
-            <div style="font-size: 15px; font-weight: 800; color: #1b5e20;" id="resumo_vendas">R$ 0,00</div>
-        </div>
-        <div style="flex: 1; border-top: 4px solid #c62828; background: #fff9f9; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-size: 20px; font-weight: bold; color: #c62828; margin-bottom: 5px;">DESPESAS</div>
-            <div style="font-size: 15px; font-weight: 800; color: #b71c1c;" id="resumo_despesas">R$ 0,00</div>
-        </div>
-        <div style="flex: 1; border-top: 4px solid #1565c0; background: #f9fbff; padding: 10px; border-radius: 4px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-            <div style="font-size: 20px; font-weight: bold; color: #1565c0; margin-bottom: 5px;">RECEITA</div>
-<div style="font-size: 15px; font-weight: 800; color: #0d47a1;" id="resumo_receita">R$ 0,00</div>
-        </div>
-    </div>
-</div>
-
-<div id="area_entradas" style="display: none; margin-top: 15px; background: #fff; border: 1px solid #999; border-radius: 4px; overflow: hidden;">
-    <div style="background: #2e7d32; color: white; padding: 5px; font-size: 10px; font-weight: bold; text-align: center;">
-        ENTRADAS (RECEITAS)
-    </div>
-    <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-        <thead style="background: #f0fdf4;">
-            <tr>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Data</th>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Descrição</th>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: right;">Valor</th>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: center;">Ação</th>
-            </tr>
-        </thead>
-        <tbody id="corpo_entradas"></tbody>
-    </table>
-</div>
-
-<div id="area_saidas" style="display: none; margin-top: 15px; background: #fff; border: 1px solid #999; border-radius: 4px; overflow: hidden;">
-    <div style="background: #c62828; color: white; padding: 5px; font-size: 10px; font-weight: bold; text-align: center;">
-        SAÍDAS (DESPESAS)
-    </div>
-    <table style="width: 100%; border-collapse: collapse; font-size: 10px;">
-        <thead style="background: #fef2f2;">
-            <tr>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Data</th>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: left;">Descrição</th>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: right;">Valor</th>
-                <th style="border: 1px solid #ccc; padding: 5px; text-align: center;">Ação</th>
-            </tr>
-        </thead>
-        <tbody id="corpo_saidas"></tbody>
-    </table>
-</div>
-
-<div style="display: flex; gap: 5px; margin-top: 10px;">
-    <button onclick="alternarLista()" style="flex: 1; background: gray; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-        Visualizar/Ocultar Movimento
-    </button>
-    <button onclick="gerarRelatorioFinanceiro()" style="flex: 1; background: gray; color: white; border: none; padding: 10px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-        Relatorio
-    </button>
-</div>
-
-<div id="busca_fin_wrapper" style="display: none; margin-bottom: 15px; background: #f9f9f9; padding: 10px; border-radius: 5px; border: 1px dashed #1a237e;">
-        <label style="font-size: 9px; font-weight: bold;">Selecionar Cliente:</label>
-        <select id="busca_fin_cliente" onchange="puxarDadosPedido(this.value); document.getElementById('busca_fin_wrapper').style.display='none';" style="width: 100%; height: 35px; border: 1px solid #1a237e; border-radius: 4px;">
-            <option value="">-- Selecione o Cliente --</option>
-        </select>
-    </div>
-
-    <div style="background: #e6e6e6; padding: 12px; border-radius: 4px; border: 1px solid #999; margin-top: 10px;">
-        
-        <div style="display: flex; gap: 5px; align-items: flex-end; margin-bottom: 10px;">
-            <div style="flex: 1;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Valor</label>
-                <input type="number" id="fin_valor" step="0.01" style="width: 100%; height: 26px; border: 1px solid #999; font-weight: bold; padding: 2px;">
-            </div>
-
-            <div style="flex: 1.2;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Tipo</label>
-                <select id="fin_tipo_pag" style="width: 100%; height: 26px; border: 1px solid #999; font-size: 12px;">
-                    <option value="Dinheiro">Dinheiro</option>
-                    <option value="Pix">Pix</option>
-                    <option value="Débito">Débito</option>
-                    <option value="Cartão Crédito">Cartão Crédito</option>
-                    <option value="Despesa">Lentes</option>
-                    <option value="Despesa">Montagens</option>
-                    <option value="Despesa">Logistica</option>
-                    <option value="Despesa">Impostos/Taxas</option>
-                </select>
-            </div>
-
-<div style="width: 45px;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Qtde.</label>
-                <input type="number" id="fin_qtde" value="1" oninput="gerarParcelasVideo()" style="width: 100%; height: 26px; border: 1px solid #999; text-align: center;">
-            </div>
-
-            <div style="width: 55px;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Taxa %</label>
-                <input type="number" id="fin_taxa" value="0" step="0.01" oninput="gerarParcelasVideo()" style="width: 100%; height: 26px; border: 1px solid #999; text-align: center; background: #fffde7;">
-            </div>
-
-            <div style="width: 85px;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Intervalo</label>
-                <div style="display: flex; align-items: center; gap: 2px;">
-                    <input type="number" id="fin_intervalo" value="30" oninput="gerarParcelasVideo()" style="width: 90%; height: 26px; border: 1px solid #999; text-align: center;">
-                    <span style="font-size: 10px;">Dias</span>
+        <div class="w-full space-y-4">
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Usuário / Email</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-user text-sm"></i></span>
+                    <input type="text" id="user_login" placeholder="Ex: admin" onkeyup="if(event.key === 'Enter') document.getElementById('pass_login').focus()" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-800">
                 </div>
             </div>
 
-            <button onclick="gerarParcelasVideo()" style="height: 26px; background: #333; color: white; border: none; padding: 0 12px; cursor: pointer; font-weight: bold; font-size: 11px;">Lançar</button>
+            <div>
+                <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-1">Senha</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400"><i class="fa-solid fa-lock text-sm"></i></span>
+                    <input type="password" id="pass_login" placeholder="••••••••" onkeyup="if(event.key === 'Enter') fazerLogin()" class="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-brand-800">
+                </div>
+            </div>
+
+            <button onclick="fazerLogin()" class="w-full py-3 bg-brand-800 hover:bg-brand-900 text-white font-bold rounded-lg shadow-lg shadow-brand-800/30 transition duration-200 flex items-center justify-center gap-2">
+                <i class="fa-solid fa-right-to-bracket"></i> ENTRAR NO SISTEMA
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- CABEÇALHO DO SISTEMA E MENU DE ABAS -->
+<header class="bg-brand-800 text-white shadow-lg sticky top-0 z-40 no-print">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-4">
+        <div class="flex items-center gap-3">
+            <img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Logo" class="h-10 bg-white rounded p-1">
+            <div>
+                <h1 class="font-extrabold text-base tracking-wide leading-none">ÓTICA AHV STORE</h1>
+                <span class="text-[10px] text-brand-100 font-medium">PDV & Gestão de Ótica Profissional</span>
+            </div>
         </div>
 
-        <div style="display: flex; gap: 5px; margin-bottom: 12px;">
-            <div style="width: 130px;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Vencimento</label>
-                <input type="date" id="fin_data" style="width: 100%; height: 26px; border: 1px solid #999;">
+        <!-- MENU DE NAVEGAÇÃO POR ABAS -->
+        <nav class="flex items-center gap-1 bg-brand-900/60 p-1 rounded-xl overflow-x-auto max-w-full">
+            <button onclick="trocarAba('dashboard')" id="tab-dashboard" class="tab-btn active px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 transition whitespace-nowrap">
+                <i class="fa-solid fa-chart-line"></i> Dashboard PDV
+            </button>
+            <button onclick="trocarAba('vendas')" id="tab-vendas" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 text-slate-300 hover:text-white transition whitespace-nowrap">
+                <i class="fa-solid fa-cart-shopping"></i> Nova Venda / O.S.
+            </button>
+            <button onclick="trocarAba('estoque')" id="tab-estoque" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 text-slate-300 hover:text-white transition whitespace-nowrap">
+                <i class="fa-solid fa-boxes-stacked"></i> Estoque
+            </button>
+            <button onclick="trocarAba('financeiro')" id="tab-financeiro" class="tab-btn px-4 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 text-slate-300 hover:text-white transition whitespace-nowrap">
+                <i class="fa-solid fa-hand-holding-dollar"></i> Financeiro & Caixa
+            </button>
+            <button onclick="abrirRelatorioMEI()" class="px-3 py-2 rounded-lg text-xs font-semibold flex items-center gap-2 text-amber-300 hover:bg-amber-400/10 transition whitespace-nowrap">
+                <i class="fa-solid fa-file-invoice"></i> Relatório MEI
+            </button>
+        </nav>
+
+        <div class="flex items-center gap-3">
+            <div id="busca-rapida-wrapper" class="hidden md:flex items-center gap-2">
+                <select id="select_busca" onchange="carregarPedidoSelecionado(this.value)" class="text-xs bg-brand-900 border border-brand-600 text-white rounded-lg px-2 py-1.5 focus:outline-none w-48">
+                    <option value="">Buscar Cliente / O.S...</option>
+                </select>
             </div>
-            <div style="flex: 1;">
-                <label style="font-size: 11px; font-weight: bold; color: #1a237e;">Descrição</label>
-                <input type="text" id="fin_desc" placeholder="" style="width: 100%; height: 26px; border: 1px solid #999; padding-left: 5px;">
+            <button onclick="fazerLogout()" title="Sair do Sistema" class="px-3 py-1.5 bg-red-600/80 hover:bg-red-600 text-white text-xs font-bold rounded-lg transition flex items-center gap-1">
+                <i class="fa-solid fa-power-off"></i> Sair
+            </button>
+        </div>
+    </div>
+</header>
+
+<!-- CONTAINER PRINCIPAL DAS ABAS -->
+<main class="max-w-7xl mx-auto w-full p-4 flex-grow">
+
+    <!-- ABA 1: DASHBOARD PDV -->
+    <section id="content-dashboard" class="space-y-6">
+        <!-- BARRA SUPERIOR DE AÇÕES RÁPIDAS DA DASHBOARD -->
+        <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-wrap items-center justify-between gap-4">
+            <div>
+                <h2 class="text-xl font-black text-slate-800">Visão Geral da Ótica</h2>
+                <p class="text-xs text-slate-500">Métricas atualizadas de faturamento, pedidos e laboratório</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <button onclick="pdvAtualizarDashboard()" class="px-3.5 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-rotate"></i> Atualizar Dados
+                </button>
+                <button onclick="trocarAba('vendas')" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-bold shadow-md shadow-emerald-600/20 flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-plus"></i> Nova Venda / O.S.
+                </button>
             </div>
         </div>
 
-        <div style="background: #ccc; padding: 1px; border-radius: 2px;">
-            <div style="font-size: 11px; font-weight: bold; padding: 4px; color: #1a237e; background: #dcdcdc;">Parcelas</div>
-            <div style="background: white; min-height: 130px; max-height: 180px; overflow-y: auto; border: 1px solid #999;">
-                <table style="width: 100%; border-collapse: collapse; font-size: 12px;">
-                    <thead style="background: #f0f0f0;">
-                        <tr>
-                            <th style="border: 1px solid #ccc; padding: 4px; text-align: left; width: 30px;">Nº</th>
-                            <th style="border: 1px solid #ccc; padding: 4px; text-align: left;">Vencimento</th>
-                            <th style="border: 1px solid #ccc; padding: 4px; text-align: left;">Valor</th>
+        <!-- CARDS DE KPIS -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-brand-800"></div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Vendas do Mês</span>
+                <div class="text-xl font-black text-brand-800 mt-1" id="pdv_kpi_vendas">R$ 0,00</div>
+                <div class="text-[10px] text-slate-500 mt-1 font-medium" id="pdv_kpi_vendas_qtd">0 pedidos registrados</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-emerald-600"></div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Recebido Caixa</span>
+                <div class="text-xl font-black text-emerald-600 mt-1" id="pdv_kpi_recebido">R$ 0,00</div>
+                <div class="text-[10px] text-slate-500 mt-1 font-medium">Lançamentos quitados</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-amber-500"></div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">A Receber</span>
+                <div class="text-xl font-black text-amber-600 mt-1" id="pdv_kpi_receber">R$ 0,00</div>
+                <div class="text-[10px] text-slate-500 mt-1 font-medium">Saldos de O.S. pendentes</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-blue-600"></div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estoque Armações</span>
+                <div class="text-xl font-black text-slate-800 mt-1" id="pdv_kpi_estoque">0</div>
+                <div class="text-[10px] text-slate-500 mt-1 font-medium" id="pdv_kpi_estoque_desc">Itens disponíveis</div>
+            </div>
+
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
+                <div class="absolute top-0 right-0 w-2 h-full bg-purple-600"></div>
+                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Em Produção</span>
+                <div class="text-xl font-black text-purple-700 mt-1" id="pdv_kpi_producao">0</div>
+                <div class="text-[10px] text-slate-500 mt-1 font-medium">Aguardando / Laboratório</div>
+            </div>
+        </div>
+
+        <!-- GRÁFICOS DE DESEMPENHO -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-column text-brand-800"></i> Faturamento Semestral (R$)
+                </h3>
+                <div class="h-64 relative">
+                    <canvas id="pdv_chart_vendas"></canvas>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-chart-pie text-brand-800"></i> Distribuição por Status
+                </h3>
+                <div class="h-64 relative">
+                    <canvas id="pdv_chart_status"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- RESUMO FINANCEIRO E ALERTAS -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+                <h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
+                    <i class="fa-solid fa-wallet text-brand-800"></i> Resumo Financeiro Geral
+                </h3>
+                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Entradas</span>
+                        <strong class="text-sm font-black text-emerald-600 block mt-1" id="pdv_fin_entradas">R$ 0,00</strong>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Saídas</span>
+                        <strong class="text-sm font-black text-rose-600 block mt-1" id="pdv_fin_saidas">R$ 0,00</strong>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Saldo Operacional</span>
+                        <strong class="text-sm font-black text-brand-800 block mt-1" id="pdv_fin_saldo">R$ 0,00</strong>
+                    </div>
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
+                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Ticket Médio</span>
+                        <strong class="text-sm font-black text-indigo-600 block mt-1" id="pdv_ticket">R$ 0,00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
+                <h3 class="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Alertas Operacionais
+                </h3>
+                <div id="pdv_alertas" class="space-y-2">
+                    <div class="text-xs text-slate-500 text-center py-6">Carregando alertas do sistema...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TABELA ÚLTIMAS VENDAS -->
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
+            <h3 class="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
+                <i class="fa-solid fa-clock-rotate-left text-brand-800"></i> Últimas Ordens de Serviço (O.S.)
+            </h3>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
+                            <th class="p-3">Nº O.S.</th>
+                            <th class="p-3">Cliente</th>
+                            <th class="p-3">Data OS</th>
+                            <th class="p-3">Status</th>
+                            <th class="p-3 text-right">Total</th>
                         </tr>
                     </thead>
-                    <tbody id="corpo_parcelas_video"></tbody>
+                    <tbody id="pdv_ultimas_vendas" class="divide-y divide-slate-100">
+                        <tr><td colspan="5" class="p-4 text-center text-slate-400">Carregando últimas vendas...</td></tr>
+                    </tbody>
                 </table>
             </div>
         </div>
+    </section>
 
-<div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; background: #dcdcdc; padding: 8px; border-radius: 4px;">
-            <div style="font-size: 12px; font-weight: bold; color: #1a237e;">
-                Falta: R$ <span id="res_falta_video">0,00</span>
+    <!-- ABA 2: NOVA VENDA / ORDEM DE SERVIÇO (O.S.) -->
+    <section id="content-vendas" class="hidden space-y-4">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 space-y-6 print-page">
+
+            <!-- CABEÇALHO DA O.S. (IMPRESSÃO E TELA) -->
+            <div class="flex justify-between items-start border-b-2 border-brand-800 pb-4">
+                <div class="flex items-center gap-3">
+                    <img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Logo Ótica" class="h-16 object-contain">
+                    <div>
+                        <h2 class="font-black text-lg text-brand-800">ÓTICA AHV STORE</h2>
+                        <span class="text-xs text-slate-500 font-medium block">Excelência Visual & Precisão Técnica</span>
+                    </div>
+                </div>
+                <div class="text-right text-[11px] leading-tight text-slate-600">
+                    <strong class="text-slate-900 block text-xs">CNPJ: 58.938.512/0001-83</strong>
+                    <span>WhatsApp: (11) 94854-5043 / (11) 96438-0652</span><br>
+                    <span>Atendimento Especializado em Lentes e Armações</span>
+                </div>
             </div>
 
-<button onclick="salvarTudoNoBanco()" style="background: #2e7d32; color: white; border: none; padding: 8px 30px; border-radius: 4px; font-weight: bold; cursor: pointer;">
-    CONFIRMAR
-</button>
-        </div>
+            <!-- DADOS DO CLIENTE -->
+            <div class="space-y-3">
+                <div class="bg-brand-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-between">
+                    <span><i class="fa-solid fa-user-tag mr-1"></i> Dados do Cliente & O.S.</span>
+                    <span class="text-[10px] font-normal opacity-80">Preenchimento Obrigatório</span>
+                </div>
 
-    </div> </div> <div id="login-screen">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                    <div class="lg:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Data Emissão</label>
+                        <input type="date" id="data_os" class="w-full h-8 border border-slate-300 rounded px-2 text-xs bg-slate-50">
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">O.S. Nº</label>
+                        <input type="text" id="num_os" placeholder="Ex: 1050" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-black text-red-600 bg-slate-50">
+                    </div>
+                    <div class="lg:col-span-4">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Nome Completo</label>
+                        <input type="text" id="nome_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="lg:col-span-2 sensivel">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">CPF</label>
+                        <input type="text" id="cpf_cliente" placeholder="000.000.000-00" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="lg:col-span-2 sensivel">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Telefone / Whats</label>
+                        <input type="text" id="tel_cliente" placeholder="(11) 90000-0000" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                </div>
 
-    <img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Logo" style="height: 200px; margin-bottom: 1px;">
-    <div class="login-box">
-        <h3>LOGIN</h3>
-        <input type="text" id="user_login" placeholder="Usuário" onkeyup="if(event.key === 'Enter') document.getElementById('pass_login').focus()">
-        <input type="password" id="pass_login" placeholder="Senha" onkeyup="if(event.key === 'Enter') fazerLogin()">
-        <button onclick="fazerLogin()">ENTRAR</button>
-    </div>
-</div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 sensivel">
+                    <div class="lg:col-span-5">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Endereço</label>
+                        <input type="text" id="rua_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="lg:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Nº</label>
+                        <input type="text" id="num_end_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="lg:col-span-3">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Bairro</label>
+                        <input type="text" id="bairro_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="lg:col-span-3">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">CEP</label>
+                        <input type="text" id="cep_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                </div>
 
-<!-- MENU DE BLOCOS (APARECE APÓS O LOGIN) -->
-<div id="menu-principal" style="display: none;">
-    <button class="bloco-menu cor-pedidos" onclick="navegarPara('vendas')">
-        <div>
-            <h3 class="bloco-titulo">VENDAS</h3>
-            <p class="bloco-sub"></p>
-        </div>
-        <div class="bloco-rodape">
-            <span class="bloco-label">PEDIDOS</span>
-            <span class="bloco-icone">📋</span>
-        </div>
-    </button>
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div class="sm:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Status do Pedido</label>
+                        <select id="status_pedido" onchange="atualizarStatusPedido(document.getElementById('num_os').value, this.value)" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold text-brand-800 bg-slate-50">
+                            <option value="Orçamento">Orçamento</option>
+                            <option value="Aguardando">Aguardando</option>
+                            <option value="Garantia">Garantia</option>    
+                            <option value="Produção">Em Produção</option>
+                            <option value="Pronto">Pronto</option>
+                            <option value="Entregue">Entregue</option>
+                        </select>
+                    </div>
+                    <div class="sm:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Previsão Entrega</label>
+                        <input type="date" id="data_previsao" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="sm:col-span-1">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Dias Prazo</label>
+                        <input type="number" id="dias_prazo" value="3" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                </div>
+            </div>
 
-    <button class="bloco-menu cor-entradas" onclick="navegarPara('estoque')">
-        <div>
-            <h3 class="bloco-titulo">ENTRADA</h3>
-            <p class="bloco-sub"></p>
-        </div>
-        <div class="bloco-rodape">
-            <span class="bloco-label">ESTOQUE</span>
-            <span class="bloco-icone">📦</span>
-        </div>
-    </button>
+            <!-- PRESCRIÇÃO LONGE -->
+            <div class="space-y-2">
+                <div class="bg-brand-800 text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+                    <span><i class="fa-solid fa-eye mr-1"></i> Prescrição Longe</span>
+                </div>
 
-<button class="bloco-menu cor-entradas" onclick="navegarPara('financeiro')">
-    <div>
-        <h3 class="bloco-titulo">FINANCEIRO</h3>
-    </div>
-    <div class="bloco-rodape">
-        <span class="bloco-label">CAIXA</span>
-        <span class="bloco-icone">💰</span>
-    </div>
-</button>
+                <!-- OD LONGE -->
+                <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-brand-800 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OD</div>
+                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><select id="e_od_l" class="sel-esf w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><select id="c_od_l" class="sel-cil w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo(); filtrarLentes('od');"></select></div>
+                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><select id="x_od_l" class="sel-eixo w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Adição</label><select id="add_od" class="sel-add w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="number" step="0.5" id="dnp_od_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="number" step="0.1" id="alt_od_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
+                </div>
 
-<button class="bloco-menu cor-mei" onclick="abrirRelatorioMEI()">
-    <div>
-        <h3 class="bloco-titulo">MEI</h3>
-        <p class="bloco-sub">Resumo DASN-SIMEI</p>
-    </div>
-    <div class="bloco-rodape">
-        <span class="bloco-label">CONTABILIDADE</span>
-        <span class="bloco-icone">📄</span>
-    </div>
-</button>
-</div>
+                <!-- OE LONGE -->
+                <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-brand-800 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OE</div>
+                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><select id="e_oe_l" class="sel-esf w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><select id="c_oe_l" class="sel-cil w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo(); filtrarLentes('oe');"></select></div>
+                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><select id="x_oe_l" class="sel-eixo w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Adição</label><select id="add_oe" class="sel-add w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="number" step="0.5" id="dnp_oe_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="number" step="0.1" id="alt_oe_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
+                </div>
+            </div>
 
-<div id="sistema-content">
-    <div class="toolbar no-print">
-        <button onclick="voltarAoMenu()" style="background:#555; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold; margin-right: 10px;">MENU</button>
-        <div style="font-size: 11px; font-weight: 800; color: var(--primary);">PESQUISAR:</div>
-        <select id="select_busca" class="search-select" onchange="carregarPedidoSelecionado(this.value)">
-            <option value="">-- Clique para buscar um cliente --</option>
-        </select>
-        <button onclick="fazerLogout()" style="background:#ef5350; color:white; border:none; padding:8px 15px; border-radius:6px; cursor:pointer; font-size:11px; font-weight:bold;">SAIR</button>
-    </div>
+            <!-- PRESCRIÇÃO PERTO -->
+            <div class="space-y-2">
+                <div class="bg-amber-600 text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+                    <span><i class="fa-solid fa-glasses mr-1"></i> Prescrição Perto (Calculada Automaticamente)</span>
+                </div>
 
-    <!-- BOTÕES DE NAVEGAÇÃO ORIGINAIS (ESCONDIDOS POIS AGORA USA O MENU DE BLOCOS) -->
-    <div class="no-print" style="display: none; gap: 5px; margin-bottom: 10px; width: 100%;">
-        <button onclick="abrirAba('vendas')" id="btn-vendas" style="flex: 1; height: 45px; cursor: pointer; font-weight: bold; background: #1a237e; color: white; border: none; border-radius: 6px;">📋 PEDIDOS / VENDAS</button>
-        <button onclick="abrirAba('estoque')" id="btn-estoque" style="flex: 1; height: 45px; cursor: pointer; font-weight: bold; background: #eee; color: #333; border: 1px solid #ccc; border-radius: 6px;">📥 ENTRADA ESTOQUE</button>
-    </div>
+                <div class="flex items-center gap-2 bg-amber-50/60 p-2 rounded-lg border border-amber-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-amber-600 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OD</div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><input type="text" id="e_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><input type="text" id="c_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><input type="text" id="x_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="text" id="dnp_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="text" id="alt_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                </div>
 
-    <!-- ABA DE ESTOQUE ORIGINAL -->
-<div id="aba-estoque" style="display: none; padding: 20px; background: #f4f7f6;">
-<button onclick="voltarAoMenu()" style="margin-bottom: 20px; padding: 10px 15px; background: #37474f; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold;">
-        MENU
-    </button>
- 
-    <h2 style="text-align: center; color: #333; margin-bottom: 20px;">📦 O que deseja cadastrar hoje?</h2>
+                <div class="flex items-center gap-2 bg-amber-50/60 p-2 rounded-lg border border-amber-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-amber-600 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OE</div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><input type="text" id="e_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><input type="text" id="c_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><input type="text" id="x_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="text" id="dnp_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="text" id="alt_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                </div>
+            </div>
 
-    <!-- Menu de Botões -->
-    <div style="display: flex; justify-content: center; gap: 15px; margin-bottom: 30px;">
-        <button onclick="alternarForm('form-armacoes')" style="padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #1a237e; color: white; font-weight: bold;">🕶️ ARMAÇÕES</button>
-        <button onclick="alternarForm('form-lentes')" style="padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #2e7d32; color: white; font-weight: bold;">🔬 LENTES</button>
-        <button onclick="alternarForm('form-tratamentos')" style="padding: 12px 20px; cursor: pointer; border-radius: 8px; border: none; background: #f57c00; color: white; font-weight: bold;">✨ TRATAMENTOS</button>
-    </div>
+            <!-- LENTES SELECIONADAS -->
+            <div class="space-y-2">
+                <div class="bg-lens text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+                    <span><i class="fa-solid fa-circle-dot mr-1"></i> Seleção de Lentes e Laboratório</span>
+                </div>
 
-    <!-- Container dos Formulários (Todos começam escondidos) -->
-    <div style="max-width: 600px; margin: 0 auto;">
-        
-        <!-- FORM ARMAÇÕES -->
-        <div id="form-armacoes" class="form-estoque" style="display: none; background: white; padding: 20px; border-radius: 12px; border-top: 5px solid #1a237e; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <h3 style="color: #1a237e;">Armação</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="arm_material" placeholder="Material">
-                <input type="text" id="arm_referencia" placeholder="Referência">
-                <input type="text" id="arm_marca" placeholder="Marca">
-                <input type="text" id="arm_tamanho" placeholder="Tamanho">
-                <input type="text" id="arm_cor" placeholder="Cor">
-                <input type="number" id="arm_estoque" placeholder="Qtd">
-                <input type="number" id="arm_custo" placeholder="Custo R$">
-                <input type="number" id="arm_venda" placeholder="Venda R$">
-                <button onclick="salvarArmacao()" style="grid-column: span 2; background: #1a237e; color: white; padding: 12px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">LANÇAR ARMAÇÃO</button>
+                <!-- LENTE OD -->
+                <div class="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-200 flex-wrap lg:flex-nowrap">
+                    <div class="bg-lens text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OD</div>
+                    <div class="w-full lg:w-48"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tipo Lente</label>
+                        <select id="tipo_lente_od" onchange="filtrarLentes('od')" class="w-full h-7 border border-slate-300 rounded text-xs">
+                            <option value=""></option>
+                            <option>Visão Simples Acabado</option>
+                            <option>Visão Simples Surfaçada</option>
+                            <option>Synchrony Progressive</option>
+                            <option>Zeiss Progressive</option>
+                            <option>VDT Progressive</option>
+                            <option>Funcional</option>
+                            <option>Multifocal C.O. PRO</option>
+                            <option>Multifocal C.O. PRO HD</option>
+                        </select>
+                    </div>
+                    <div class="w-24"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cód.</label><input type="text" id="cod_lente_od" oninput="buscarPorCodigo('od')" class="w-full h-7 border border-slate-300 rounded text-xs px-1"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Descrição da Lente</label><select id="nome_lente_od" onchange="buscarPorNome('od')" class="w-full h-7 border border-slate-300 rounded text-xs"><option value=""></option></select></div>
+                    <div class="w-full lg:w-40"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tratamento</label>
+                        <select id="ar_od" onchange="atualizarPrecoAutomatico()" class="w-full h-7 border border-slate-300 rounded text-xs">
+                            <option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option>
+                        </select>
+                    </div>
+                    <div class="w-full lg:w-32"><label class="block text-[9px] font-bold text-slate-600 uppercase">Laboratório</label>
+                        <select id="lab_od" class="w-full h-7 border border-slate-300 rounded text-xs">
+                            <option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- LENTE OE -->
+                <div class="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-200 flex-wrap lg:flex-nowrap">
+                    <div class="bg-lens text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OE</div>
+                    <div class="w-full lg:w-48"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tipo Lente</label>
+                        <select id="tipo_lente_oe" onchange="filtrarLentes('oe')" class="w-full h-7 border border-slate-300 rounded text-xs">
+                            <option value=""></option>
+                            <option>Visão Simples Acabado</option>
+                            <option>Visão Simples Surfaçada</option>
+                            <option>Synchrony Progressive</option>
+                            <option>Zeiss Progressive</option>
+                            <option>VDT Progressive</option>
+                            <option>Funcional</option>
+                            <option>Multifocal C.O. PRO</option>
+                            <option>Multifocal C.O. PRO HD</option>
+                        </select>
+                    </div>
+                    <div class="w-24"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cód.</label><input type="text" id="cod_lente_oe" oninput="buscarPorCodigo('oe')" class="w-full h-7 border border-slate-300 rounded text-xs px-1"></div>
+                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Descrição da Lente</label><select id="nome_lente_oe" onchange="buscarPorNome('oe')" class="w-full h-7 border border-slate-300 rounded text-xs"><option value=""></option></select></div>
+                    <div class="w-full lg:w-40"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tratamento</label>
+                        <select id="ar_oe" onchange="atualizarPrecoAutomatico()" class="w-full h-7 border border-slate-300 rounded text-xs">
+                            <option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option>
+                        </select>
+                    </div>
+                    <div class="w-full lg:w-32"><label class="block text-[9px] font-bold text-slate-600 uppercase">Laboratório</label>
+                        <select id="lab_oe" class="w-full h-7 border border-slate-300 rounded text-xs">
+                            <option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ARMAÇÃO E MEDIDAS TÉCNICAS -->
+            <div class="space-y-3">
+                <div class="bg-brand-800 text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+                    <span><i class="fa-solid fa-ruler-combined mr-1"></i> Armação & Medidas Técnicas</span>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                    <div class="lg:col-span-3">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Material Armação</label>
+                        <select id="material_arma" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                            <option value=""></option><option>Acetato</option><option>Metal</option><option>Fio de Nylon</option><option>Parafuso</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Estado</label>
+                        <select id="estado_arma" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                            <option value=""></option><option>Novo</option><option>Usado</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-7">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Marca / Ref. / Cor / Tam</label>
+                        <input type="text" id="ref_arma" list="lista_armacoes" oninput="buscarSugestoes(this.value)" onblur="buscarNoEstoque(this.value)" placeholder="Digite a referência para autocompletar..." class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <datalist id="lista_armacoes"></datalist>
+                    </div>
+                </div>
+
+                <!-- MEDIDAS MEDIDAS DE LENTE E DIÂMETRO -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Ponte</label><input type="number" id="m_ponte" oninput="calcularDiametro()" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Aro Horiz.</label><input type="number" id="m_aro_h" oninput="calcularDiametro()" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Aro Vert.</label><input type="number" id="m_aro_v" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
+                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Aro Maior</label><input type="number" id="m_aro_m" oninput="calcularDiametro()" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
+                    <div>
+                        <label class="block text-[9px] font-bold text-brand-800 uppercase">Ø Sugerido</label>
+                        <input type="text" id="m_diametro" readonly class="w-full h-7 border border-blue-300 rounded text-xs px-2 font-black text-brand-800 bg-blue-50">
+                    </div>
+                </div>
+            </div>
+
+            <!-- VALORES E TOTALIZADORES DA VENDA -->
+            <div class="financeiro-section bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
+                <div class="text-xs font-bold text-brand-800 uppercase tracking-wider flex items-center gap-1">
+                    <i class="fa-solid fa-calculator"></i> Fechamento Financeiro da Venda
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Vlr. Armação (R$)</label>
+                        <input type="number" id="vlr_armacao" step="0.01" oninput="calcularTotal()" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Vlr. Lentes (R$)</label>
+                        <input type="number" id="vlr_lentes" step="0.01" oninput="calcularTotal()" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Desconto (R$)</label>
+                        <input type="number" id="vlr_desconto" step="0.01" oninput="calcularTotal()" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold text-red-600">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-emerald-800 uppercase">Total Geral (R$)</label>
+                        <input type="text" id="vlr_total" readonly class="w-full h-8 border border-emerald-500 rounded px-2 text-sm font-black text-white bg-emerald-700">
+                    </div>
+                </div>
+            </div>
+
+            <!-- OBSERVAÇÕES DA OS -->
+            <div>
+                <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Observações do Pedido / Laboratório</label>
+                <textarea id="obs_pedido" rows="2" placeholder="Digite detalhes sobre montagem, coloração ou observações específicas..." class="w-full border border-slate-300 rounded p-2 text-xs"></textarea>
+            </div>
+
+            <!-- BOTÕES DE AÇÃO DA OS -->
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-2 no-print">
+                <button onclick="salvarPedido()" title="Salvar O.S." class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow transition flex items-center gap-2 text-xs">
+                    <i class="fa-solid fa-floppy-disk text-sm"></i> Salvar Pedido
+                </button>
+                <button onclick="novoPedido()" title="Limpar para Novo" class="px-5 py-2.5 bg-slate-600 hover:bg-slate-700 text-white font-bold rounded-lg shadow transition flex items-center gap-2 text-xs">
+                    <i class="fa-solid fa-file-circle-plus text-sm"></i> Novo Pedido
+                </button>
+                <button onclick="imprimirGeral()" title="Imprimir Via Cliente" class="px-5 py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold rounded-lg shadow transition flex items-center gap-2 text-xs">
+                    <i class="fa-solid fa-print text-sm"></i> Via Cliente
+                </button>
+                <button onclick="imprimirLaboratorio()" title="Via Laboratório" class="px-5 py-2.5 bg-purple-700 hover:bg-purple-800 text-white font-bold rounded-lg shadow transition flex items-center gap-2 text-xs">
+                    <i class="fa-solid fa-microscope text-sm"></i> Via Laboratório
+                </button>
             </div>
         </div>
+    </section>
 
-        <!-- FORM LENTES -->
-        <div id="form-lentes" class="form-estoque" style="display: none; background: white; padding: 20px; border-radius: 12px; border-top: 5px solid #2e7d32; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <h3 style="color: #2e7d32;">Lente</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <select id="len_tipo"><option>Tipo...</option><option>Multifocal C.O. PRO</option><option>Multifocal C.O. PRO HD</option><option>Visão Simples Surfaçada</option><option>Visão Simples Acabado</option></select>
-                <input type="text" id="len_codigo" placeholder="Código">
-                <input type="text" id="len_nome" placeholder="Nome da Lente" style="grid-column: span 2;">
-                <input type="number" id="len_custo" placeholder="Custo R$">
-                <input type="number" id="len_venda" placeholder="Venda R$">
-                <input type="text" id="len_fornecedor" placeholder="Fornecedor" style="grid-column: span 2;">
-                <button onclick="salvarLente()" style="grid-column: span 2; background: #2e7d32; color: white; padding: 12px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">LANÇAR LENTE</button>
+    <!-- ABA 3: GESTÃO DE ESTOQUE -->
+    <section id="content-estoque" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+            <div class="text-center max-w-xl mx-auto mb-6">
+                <h2 class="text-xl font-black text-slate-800">Cadastro & Controle de Estoque</h2>
+                <p class="text-xs text-slate-500">Cadastre armações, lentes catalogadas e tratamentos disponíveis</p>
+            </div>
+
+            <!-- SUB-ABAS DE ESTOQUE -->
+            <div class="flex justify-center border-b border-slate-200 mb-6 gap-6">
+                <button onclick="alternarForm('form-armacoes')" id="subtab-armacoes" class="subtab-btn active pb-3 text-xs font-bold transition flex items-center gap-2">
+                    <i class="fa-solid fa-glasses"></i> ARMAÇÕES
+                </button>
+                <button onclick="alternarForm('form-lentes')" id="subtab-lentes" class="subtab-btn pb-3 text-xs font-bold text-slate-400 hover:text-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-circle-dot"></i> LENTES
+                </button>
+                <button onclick="alternarForm('form-tratamentos')" id="subtab-tratamentos" class="subtab-btn pb-3 text-xs font-bold text-slate-400 hover:text-slate-700 transition flex items-center gap-2">
+                    <i class="fa-solid fa-wand-magic-sparkles"></i> TRATAMENTOS
+                </button>
+            </div>
+
+            <!-- FORMULÁRIO ARMAÇÕES -->
+            <div id="form-armacoes" class="form-estoque max-w-2xl mx-auto bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                <h3 class="text-sm font-extrabold text-brand-800 border-b pb-2">Cadastrar Nova Armação</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" id="arm_material" placeholder="Material (Ex: Acetato)" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="text" id="arm_referencia" placeholder="Referência Código" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="text" id="arm_marca" placeholder="Marca (Ex: Ray-Ban)" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="text" id="arm_tamanho" placeholder="Tamanho (Ex: 52-18)" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="text" id="arm_cor" placeholder="Cor (Ex: C1 Preto Fosco)" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" id="arm_estoque" placeholder="Quantidade Estoque" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" step="0.01" id="arm_custo" placeholder="Custo R$" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" step="0.01" id="arm_venda" placeholder="Venda R$" class="h-9 border border-slate-300 rounded px-3 text-xs font-bold text-emerald-700">
+                </div>
+                <button onclick="salvarArmacao()" class="w-full py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold rounded text-xs transition">LANÇAR ARMAÇÃO NO ESTOQUE</button>
+            </div>
+
+            <!-- FORMULÁRIO LENTES -->
+            <div id="form-lentes" class="form-estoque hidden max-w-2xl mx-auto bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                <h3 class="text-sm font-extrabold text-emerald-700 border-b pb-2">Cadastrar Nova Lente no Catálogo</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <select id="len_tipo" class="h-9 border border-slate-300 rounded px-2 text-xs">
+                        <option value="">Selecione o Tipo...</option>
+                        <option>Multifocal C.O. PRO</option>
+                        <option>Multifocal C.O. PRO HD</option>
+                        <option>Visão Simples Surfaçada</option>
+                        <option>Visão Simples Acabado</option>
+                    </select>
+                    <input type="text" id="len_codigo" placeholder="Código Único Lente" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="text" id="len_nome" placeholder="Nome Completo da Lente" class="sm:col-span-2 h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" step="0.01" id="len_custo" placeholder="Custo R$" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" step="0.01" id="len_venda" placeholder="Venda R$" class="h-9 border border-slate-300 rounded px-3 text-xs font-bold text-emerald-700">
+                    <input type="text" id="len_fornecedor" placeholder="Fornecedor / Laboratório" class="sm:col-span-2 h-9 border border-slate-300 rounded px-3 text-xs">
+                </div>
+                <button onclick="salvarLente()" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs transition">LANÇAR LENTE NO CATÁLOGO</button>
+            </div>
+
+            <!-- FORMULÁRIO TRATAMENTOS -->
+            <div id="form-tratamentos" class="form-estoque hidden max-w-2xl mx-auto bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
+                <h3 class="text-sm font-extrabold text-amber-600 border-b pb-2">Cadastrar Tratamento Antireflexo / Outros</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <input type="text" id="tra_nome" placeholder="Nome do Tratamento" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="text" id="tra_marca" placeholder="Marca / Tecnologia" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" step="0.01" id="tra_custo" placeholder="Custo R$" class="h-9 border border-slate-300 rounded px-3 text-xs">
+                    <input type="number" step="0.01" id="tra_venda" placeholder="Venda R$" class="h-9 border border-slate-300 rounded px-3 text-xs font-bold text-emerald-700">
+                    <input type="text" id="tra_lab" placeholder="Laboratório Parceiro" class="sm:col-span-2 h-9 border border-slate-300 rounded px-3 text-xs">
+                </div>
+                <button onclick="salvarTratamento()" class="w-full py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded text-xs transition">LANÇAR TRATAMENTO</button>
             </div>
         </div>
+    </section>
 
-        <!-- FORM TRATAMENTOS -->
-        <div id="form-tratamentos" class="form-estoque" style="display: none; background: white; padding: 20px; border-radius: 12px; border-top: 5px solid #f57c00; box-shadow: 0 4px 10px rgba(0,0,0,0.1);">
-            <h3 style="color: #f57c00;">Tratamento</h3>
-            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
-                <input type="text" id="tra_nome" placeholder="Tratamento">
-                <input type="text" id="tra_marca" placeholder="Marca">
-                <input type="number" id="tra_custo" placeholder="Custo R$">
-                <input type="number" id="tra_venda" placeholder="Venda R$">
-                <input type="text" id="tra_lab" placeholder="Laboratório" style="grid-column: span 2;">
-                <button onclick="salvarTratamento()" style="grid-column: span 2; background: #f57c00; color: white; padding: 12px; border: none; border-radius: 5px; margin-top: 10px; cursor: pointer;">LANÇAR TRATAMENTO</button>
+    <!-- ABA 4: FINANCEIRO & CAIXA -->
+    <section id="content-financeiro" class="hidden space-y-6">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-6 max-w-4xl mx-auto">
+            <div class="flex flex-wrap items-center justify-between border-b pb-4 gap-3">
+                <div>
+                    <h2 class="text-xl font-black text-brand-800">Controle de Fluxo de Caixa</h2>
+                    <p class="text-xs text-slate-500">Lançamentos, receitas, despesas operacionais e quitação de saldos</p>
+                </div>
+                <button onclick="document.getElementById('busca_fin_wrapper').classList.toggle('hidden')" class="px-3 py-1.5 border border-brand-800 text-brand-800 hover:bg-brand-50 rounded-lg text-xs font-bold flex items-center gap-1.5 transition">
+                    <i class="fa-solid fa-magnifying-glass"></i> Importar Cliente O.S.
+                </button>
+            </div>
+
+            <!-- SELEÇÃO DE CLIENTE IMPORTADO -->
+            <div id="busca_fin_wrapper" class="hidden bg-slate-50 p-3 rounded-lg border border-brand-200 space-y-2">
+                <label class="block text-xs font-bold text-brand-800 uppercase">Selecionar Cliente com Saldo Aberto:</label>
+                <select id="busca_fin_cliente" onchange="puxarDadosPedido(this.value); document.getElementById('busca_fin_wrapper').classList.add('hidden');" class="w-full h-9 border border-slate-300 rounded text-xs px-2">
+                    <option value="">-- Selecione o Cliente --</option>
+                </select>
+            </div>
+
+            <!-- FILTRO DE PERÍODO DA DASHBOARD MENSAL -->
+            <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
+                <div class="flex flex-wrap items-center justify-center gap-3">
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-slate-600 uppercase">Início:</label>
+                        <input type="date" id="filtro_inicio" class="h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-xs font-bold text-slate-600 uppercase">Fim:</label>
+                        <input type="date" id="filtro_fim" class="h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <button onclick="atualizarResumoMensal()" class="px-4 py-1.5 bg-brand-800 hover:bg-brand-900 text-white rounded text-xs font-bold transition">
+                        Filtrar Período
+                    </button>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div class="bg-white p-4 rounded-lg border-t-4 border-emerald-600 shadow-sm text-center">
+                        <span class="text-xs font-extrabold text-emerald-700 uppercase block">Total Vendas</span>
+                        <div class="text-lg font-black text-slate-800 mt-1" id="resumo_vendas">R$ 0,00</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border-t-4 border-rose-600 shadow-sm text-center">
+                        <span class="text-xs font-extrabold text-rose-700 uppercase block">Despesas / Custos</span>
+                        <div class="text-lg font-black text-slate-800 mt-1" id="resumo_despesas">R$ 0,00</div>
+                    </div>
+                    <div class="bg-white p-4 rounded-lg border-t-4 border-blue-600 shadow-sm text-center">
+                        <span class="text-xs font-extrabold text-blue-700 uppercase block">Receita Líquida</span>
+                        <div class="text-lg font-black text-slate-800 mt-1" id="resumo_receita">R$ 0,00</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- FORMULÁRIO DE LANÇAMENTO FINANCEIRO -->
+            <div class="bg-slate-100 p-4 rounded-xl border border-slate-300 space-y-3">
+                <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Novo Lançamento de Caixa / Quitação</h3>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Valor R$</label>
+                        <input type="number" step="0.01" id="fin_valor" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold">
+                    </div>
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Tipo / Pagamento</label>
+                        <select id="fin_tipo_pag" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                            <option value="Dinheiro">Dinheiro</option>
+                            <option value="Pix">Pix</option>
+                            <option value="Débito">Débito</option>
+                            <option value="Cartão Crédito">Cartão Crédito</option>
+                            <option value="Despesa">Despesa - Lentes</option>
+                            <option value="Despesa">Despesa - Montagens</option>
+                            <option value="Despesa">Despesa - Logística</option>
+                            <option value="Despesa">Despesa - Impostos/Taxas</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Data Lançamento</label>
+                        <input type="date" id="fin_data" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                    <div class="sm:col-span-2">
+                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Descrição Lançamento</label>
+                        <input type="text" id="fin_desc" placeholder="Ex: Pagamento Restante O.S. 1050" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    </div>
+                </div>
+
+                <button onclick="salvarFinanceiro()" class="w-full py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded text-xs shadow transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-check-circle"></i> CONFIRMAR LANÇAMENTO NO CAIXA
+                </button>
             </div>
         </div>
+    </section>
 
+</main>
+
+<!-- RODAPÉ DA APLICAÇÃO -->
+<footer class="bg-slate-900 text-slate-400 text-[11px] py-4 text-center border-t border-slate-800 no-print mt-auto">
+    <div class="max-w-7xl mx-auto px-4">
+        <span>ÓTICA AHV STORE © 2026 • Sistema de Gestão & PDV de Alta Performance</span>
     </div>
-
-</div>
-
-    <!-- TELA DE PEDIDOS ORIGINAL -->
-    <div class="page" id="os-content">
-        <div class="header">
-            <div class="logo"><img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Logo"></div>
-            <div class="store-info">
-                <b>ÓTICA AHV STORE</b><br>
-                CNPJ: 58.938.512/0001-83<br>
-                WhatsApp: (11) 94854-5043 / (11) 96438-0652
-            </div>
-        </div>
-
-        <div class="section-title cliente-titulo">Dados do Cliente</div>
-        <div class="eye-row">
-            <div class="input-group" style="flex: 0.6;"><label>Data</label><input type="date" id="data_os" onchange="calcularPrevisao()"></div>
-            <div class="input-group" style="flex: 0.5;"><label>O.S. Nº</label><input type="text" id="num_os" style="font-weight: bold; color: red;"></div>
-            <div class="input-group" style="flex: 1.5;"><label>Nome Completo</label><input type="text" id="nome_cliente"></div>
-            <div class="input-group sensivel" style="flex: 0.8;"><label>CPF</label><input type="text" id="cpf_cliente" maxlength="14" oninput="mascaraCPF(this)"></div>
-            <div class="input-group sensivel" style="flex: 0.8;"><label>Telefone</label><input type="text" id="tel_cliente" maxlength="15" oninput="mascaraTel(this)"></div>
-        </div>
-        <div class="eye-row sensivel">
-            <div class="input-group" style="flex: 2;"><label>Endereço</label><input type="text" id="rua_cliente"></div>
-            <div class="input-group" style="flex: 0.4;"><label>Nº</label><input type="text" id="num_end_cliente"></div>
-            <div class="input-group" style="flex: 1;"><label>Bairro</label><input type="text" id="bairro_cliente"></div>
-            <div class="input-group" style="flex: 0.7;"><label>CEP</label><input type="text" id="cep_cliente" maxlength="9" oninput="mascaraCEP(this)" onblur="buscarCEP(this.value)"></div>
-</div>
-        <div class="eye-row sensivel" style="background: white;">
-            <div class="input-group"><label>Complemento</label><input type="text" id="complemento_cliente"></div>
-            <div class="input-group"><label>Cidade</label><input type="text" id="cid_cliente"></div>
-            <div class="input-group" style="flex: 0.3;"><label>UF</label><input type="text" id="uf_cliente" maxlength="2"></div>
-        </div>
-
-<div class="eye-row">
-    <div class="input-group" style="flex:1;">
-        <label>Status</label>
-            <select id="status_pedido" onchange="verificarMudancaStatus()">
-            <option value="Orçamento">Orçamento</option>
-            <option value="Aguardando">Aguardando</option>
-            <option value="Garantia">Garantia</option>    
-            <option value="Produção">Em Produção</option>
-            <option value="Pronto">Pronto</option>
-            <option value="Entregue">Entregue</option>
-        </select>
-    </div>
-
-    <div class="input-group" style="flex:1;">
-        <label>Previsão Entrega</label>
-        <input type="date" id="data_previsao" onchange="verificarAtraso()">
-    </div>
-
-    <div class="input-group" style="flex:1;">
-        <label>Dias Prazo</label>
-        <input type="number" id="dias_prazo" value="3" oninput="calcularPrevisao()">
-    </div>
-</div>
-
-        <div class="section-title">Prescrição Longe</div>
-<div class="eye-row">
-    <div class="eye-label">OD</div>
-    <div class="input-group"><label>Esférico</label><select id="e_od_l" class="sel-esf" onchange="atualizarTudo()"></select></div>
-    <div class="input-group"><label>Cilíndrico</label><select id="c_od_l" class="sel-cil" onchange="atualizarTudo(); filtrarLentes('od');"></select></div>
-    <div class="input-group"><label>Eixo</label><select id="x_od_l" class="sel-eixo" onchange="atualizarTudo()"></select></div>
-    <div class="input-group"><label>Adição</label><select id="add_od" class="sel-add" onchange="atualizarTudo()"></select></div>
-    <div class="input-group"><label>DNP</label><input type="number" step="0.5" id="dnp_od_l" oninput="atualizarTudo()"></div>
-    <div class="input-group"><label>Altura</label><input type="number" step="0.1" id="alt_od_l" oninput="atualizarTudo()"></div>
-</div>
-<div class="eye-row">
-    <div class="eye-label">OE</div>
-    <div class="input-group"><label>Esférico</label><select id="e_oe_l" class="sel-esf" onchange="atualizarTudo()"></select></div>
-    <div class="input-group"><label>Cilíndrico</label><select id="c_oe_l" class="sel-cil" onchange="atualizarTudo(); filtrarLentes('oe');"></select></div>
-    <div class="input-group"><label>Eixo</label><select id="x_oe_l" class="sel-eixo" onchange="atualizarTudo()"></select></div>
-    <div class="input-group"><label>Adição</label><select id="add_oe" class="sel-add" onchange="atualizarTudo()"></select></div>
-    <div class="input-group"><label>DNP</label><input type="number" step="0.5" id="dnp_oe_l" oninput="atualizarTudo()"></div>
-    <div class="input-group"><label>Altura</label><input type="number" step="0.1" id="alt_oe_l" oninput="atualizarTudo()"></div>
-</div>
-        <div class="section-title">Prescrição Perto</div>
-        <div class="eye-row perto">
-            <div class="eye-label" style="background: #d4a017;">OD</div>
-            <div class="input-group"><label>Esférico</label><input type="text" id="e_od_p"></div>
-            <div class="input-group"><label>Cilíndrico</label><input type="text" id="c_od_p"></div>
-            <div class="input-group"><label>Eixo</label><input type="text" id="x_od_p"></div>
-            <div class="input-group"><label>DNP</label><input type="text" id="dnp_od_p"></div>
-            <div class="input-group"><label>Altura</label><input type="text" id="alt_od_p"></div>
-        </div>
-        <div class="eye-row perto">
-            <div class="eye-label" style="background: #d4a017;">OE</div>
-            <div class="input-group"><label>Esférico</label><input type="text" id="e_oe_p"></div>
-            <div class="input-group"><label>Cilíndrico</label><input type="text" id="c_oe_p"></div>
-            <div class="input-group"><label>Eixo</label><input type="text" id="x_oe_p"></div>
-            <div class="input-group"><label>DNP</label><input type="text" id="dnp_oe_p"></div>
-            <div class="input-group"><label>Altura</label><input type="text" id="alt_oe_p"></div>
-        </div>
-
-        <div class="section-title">Lentes</div>
-        <div class="eye-row lentes">
-            <div class="eye-label" style="background: #2980b9;">OD</div>
-            <div class="input-group" style="flex: 1.2;"><label>Tipo</label><select id="tipo_lente_od" onchange="filtrarLentes('od')"><option value=""></option><option>Visão Simples Acabado</option><option>Visão Simples Surfaçada</option><option>Synchrony Progressive</option><option>Zeiss Progressive</option><option>VDT Progressive</option><option>Funcional</option><option>Multifocal C.O. PRO</option><option>Multifocal C.O. PRO HD</option></select></div>
-            <div class="input-group" style="flex: 0.6;"><label>Cód.</label><input type="text" id="cod_lente_od" oninput="buscarPorCodigo('od')"></div>
-            <div class="input-group" style="flex: 2.2;"><label>Lente</label><select id="nome_lente_od" onchange="buscarPorNome('od')"><option value=""></option></select></div>
-            <div class="input-group" style="flex: 1.2;"><label>Tratamento</label><select id="ar_od" onchange="atualizarPrecoAutomatico()"><option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option></select></div>
-            <div class="input-group" style="flex: 0.8;"><label>Laboratório</label><select id="lab_od"><option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option></select></div>
-        </div>
-        <div class="eye-row lentes">
-            <div class="eye-label" style="background: #2980b9;">OE</div>
-            <div class="input-group" style="flex: 1.2;"><label>Tipo</label><select id="tipo_lente_oe" onchange="filtrarLentes('oe')"><option value=""></option><option>Visão Simples Acabado</option><option>Visão Simples Surfaçada</option><option>Synchrony Progressive</option><option>Zeiss Progressive</option><option>VDT Progressive</option><option>Funcional</option><option>Multifocal C.O. PRO</option><option>Multifocal C.O. PRO HD</option></select></div>
-            <div class="input-group" style="flex: 0.6;"><label>Cód.</label><input type="text" id="cod_lente_oe" oninput="buscarPorCodigo('oe')"></div>
-            <div class="input-group" style="flex: 2.2;"><label>Lente</label><select id="nome_lente_oe" onchange="buscarPorNome('oe')"><option value=""></option></select></div>
-            <div class="input-group" style="flex: 1.2;"><label>Tratamento</label><select id="ar_oe" onchange="atualizarPrecoAutomatico()"><option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option></select></div>
-            <div class="input-group" style="flex: 0.8;"><label>Laboratório</label><select id="lab_oe"><option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option></select></div>
-
-        </div>
-
-        <div class="section-title">Armação e Medidas Técnicas</div>
-        <div class="eye-row">
-            <div class="input-group" style="flex: 0.8;"><label>Material</label><select id="material_arma"><option value=""></option><option>Acetato</option><option>Metal</option><option>Fio de Nylon</option><option>Parafuso</option></select></div>
-            <div class="input-group" style="flex: 0.6;"><label>Estado</label><select id="estado_arma"><option value=""></option><option>Novo</option><option>Usado</option></select></div>
-<div class="input-group" style="flex: 2.5;">
-    <label>Marca / Ref. / Cor / Tam</label>
-    <input type="text" id="ref_arma" list="lista_armacoes" oninput="buscarSugestoes(this.value)" onblur="buscarNoEstoque(this.value)" placeholder="Digite a Ref">
-    
-    <datalist id="lista_armacoes"></datalist>
-</div>
-        </div>
-        <div class="eye-row">
-            <div class="input-group"><label>Ponte</label><input type="number" id="m_ponte" oninput="calcularDiametro()"></div>
-            <div class="input-group"><label>Aro Hor.</label><input type="number" id="m_aro_h" oninput="calcularDiametro()"></div>
-            <div class="input-group"><label>Aro Ver.</label><input type="number" id="m_aro_v"></div>
-            <div class="input-group"><label>Aro Maior</label><input type="number" id="m_aro_m" oninput="calcularDiametro()"></div>
-            <div class="input-group" style="flex: 1.2;"><label style="color:var(--primary)">Ø Sugerido</label><input type="text" id="m_diametro" readonly style="font-weight:bold; background:#e3f2fd;"></div>
-        </div>
-
-        <div class="financeiro-section">
-            <div class="section-title">Venda</div>
-            <div class="eye-row">
-                <div class="input-group"><label>Vlr. Armação</label><input type="number" id="vlr_armacao" step="0.01" oninput="calcularTotal()"></div>
-                <div class="input-group"><label>Vlr. Lentes</label><input type="number" id="vlr_lentes" step="0.01" oninput="calcularTotal()"></div>
-                <div class="input-group"><label>Desconto (R$)</label><input type="number" id="vlr_desconto" step="0.01" oninput="calcularTotal()"></div>
-                <div class="input-group" style="flex: 1.2;"><label style="color:#1b5e20; font-weight:bold;">Total Geral</label><input type="text" id="vlr_total" readonly></div>
-            </div>
-        </div>
-        <div class="section-title">Observações</div>
-        <textarea id="obs_pedido" placeholder=""></textarea>
-
-<div class="footer-buttons no-print">
-    <button class="btn btn-save" title="Salvar" onclick="salvarPedido()">💾</button>
-    <button class="btn btn-new" title="Novo Pedido" onclick="novoPedido()">📄</button>
-    <button class="btn btn-print" title="Imprimir Via Cliente" onclick="imprimirGeral()">🖨️</button>
-    <button class="btn btn-lab" title="Via Laboratório" onclick="imprimirLaboratorio()">🔬</button>
-    <button class="btn btn-whatsapp" title="Enviar via WhatsApp" onclick="enviarWhatsApp()" style="background-color: #25d366;">
-        <img src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg" alt="WhatsApp" style="width: 20px; height: 20px; vertical-align: middle;">
-    </button>
-</div>    </div>
-</div>
+</footer>
 
 <script>
-    const _supabase = supabase.createClient('https://gxeuheqhpsapigyozanu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4ZXVoZXFocHNhcGlneW96YW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzU3NDcsImV4cCI6MjA4OTc1MTc0N30.h_Yqrj959cpXFKSYO3wrvGQ7RXO5QEL2NeRy1QqfQJc');
+    // INICIALIZAÇÃO DO CLIENTE SUPABASE ORIGINAL
+    const _supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
+        ? supabase.createClient('https://gxeuheqhpsapigyozanu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4ZXVoZXFocHNhcGlneW96YW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzU3NDcsImV4cCI6MjA4OTc1MTc0N30.h_Yqrj959cpXFKSYO3wrvGQ7RXO5QEL2NeRy1QqfQJc') 
+        : null;
 
-    let idEdicao = null;
-    
     let editandoPedido = false;
-    let statusAnterior = ""; 
-
     let timerInatividade;
-    const TEMPO_LIMITE = 300000; 
+    const TEMPO_LIMITE = 300000; // 5 minutos de inatividade
 
+    let chartVendasInstance = null;
+    let chartStatusInstance = null;
+
+    // TIMER DE INATIVIDADE DA SESSÃO
     function resetarTimer() {
         if (typeof timerInatividade !== 'undefined') clearTimeout(timerInatividade);
-        timerInatividade = setTimeout(() => { alert("Sessão encerrada por inatividade"); fazerLogout(); }, TEMPO_LIMITE); 
+        timerInatividade = setTimeout(() => { 
+            alert("Sessão encerrada por inatividade para segurança do sistema."); 
+            fazerLogout(); 
+        }, TEMPO_LIMITE); 
     }
 
-async function buscarSugestoes(valor) {
-    if (valor.length < 2) {
-        document.getElementById('lista_armacoes').innerHTML = '';
-        return;
-    }
-    const { data: sugestoes } = await _supabase
-        .from('tabela_armacoes')
-        .select('ref, marca, cor, tam') // Nomes minúsculos como no seu banco
-        .ilike('ref', `${valor.trim()}%`)
-        .limit(10);
+    document.onmousemove = resetarTimer;
+    document.onkeydown = resetarTimer;
+    document.onclick = resetarTimer;
+    document.onscroll = resetarTimer;
 
-    const datalist = document.getElementById('lista_armacoes');
-    datalist.innerHTML = ''; 
-    if (sugestoes) {
-        sugestoes.forEach(item => {
-            const option = document.createElement('option');
-            // Usando item.ref e item.cor (minúsculos)
-            option.value = `${item.ref} | ${item.cor} | ${item.tam}`;
-            option.textContent = `${item.marca} | ${item.cor} | ${item.tam}`;
-            datalist.appendChild(option);
-        });
-    }
-}
-
-    // --- SENSORES DE ATIVIDADE ---
-    // Estas linhas avisam ao sistema para reiniciar o tempo toda vez que você interagir
-    document.onmousemove = resetarTimer; // Resetar ao mexer o mouse
-    document.onkeydown = resetarTimer;   // Resetar ao digitar
-    document.onclick = resetarTimer;     // Resetar ao clicar
-    document.onscroll = resetarTimer;    // Resetar ao rolar a página
-
-    // --- LOGIN E NAVEGAÇÃO ---
-    async function fazerLogin() {
-        const user = document.getElementById('user_login').value.trim();
-        const pass = document.getElementById('pass_login').value;
-        const email = user.includes('@') ? user : user + "@ahvstore.com";
-        const { error } = await _supabase.auth.signInWithPassword({ email, password: pass });
-        if (error) return alert("Usuário ou Senha Inválidos!");
-        document.getElementById('login-screen').style.display = 'none';
-        document.getElementById('menu-principal').style.display = 'grid'; 
-        resetarTimer(); atualizarSelectBusca();
-    }
-
-async function carregarPedidoSelecionado(numOS) {
-    // SE O USUÁRIO CLICAR NO ESPAÇO EM BRANCO (vazio), LIMPA A TELA
-    if (!numOS || numOS === "") {
-        limparCamposRapido(); 
-        return;
-    }
-
-    const { data, error } = await _supabase
-        .from('tabela_pedidos')
-        .select('*')
-        .eq('num_os', numOS)
-        .maybeSingle();
-
-    if (error) {
-        console.error("Erro no banco:", error);
-        return;
-    }
-
-    if (data) {
-        // 1. Preenche todos os campos básicos
-        Object.keys(data).forEach(key => {
-            const campo = document.getElementById(key);
-            if (campo) {
-                campo.value = data[key] || "";
+    // SISTEMA DE TROCA DE ABAS NAVEGÁVEIS
+    function trocarAba(nomeAba) {
+        const abas = ['dashboard', 'vendas', 'estoque', 'financeiro'];
+        abas.forEach(a => {
+            const elContent = document.getElementById(`content-${a}`);
+            const elTab = document.getElementById(`tab-${a}`);
+            if (elContent) elContent.classList.add('hidden');
+            if (elTab) {
+                elTab.classList.remove('active');
+                elTab.classList.add('text-slate-300');
             }
         });
 
-        // Garante as duas casas decimais nos campos de valor
-        if(data.vlr_armacao) document.getElementById('vlr_armacao').value = parseFloat(data.vlr_armacao).toFixed(2);
-        if(data.vlr_lentes) document.getElementById('vlr_lentes').value = parseFloat(data.vlr_lentes).toFixed(2);
-        if(data.vlr_desconto) document.getElementById('vlr_desconto').value = parseFloat(data.vlr_desconto).toFixed(2);
-        if(data.vlr_total) document.getElementById('vlr_total').value = parseFloat(data.vlr_total).toFixed(2);
+        const activeContent = document.getElementById(`content-${nomeAba}`);
+        const activeTab = document.getElementById(`tab-${nomeAba}`);
+        
+        if (activeContent) activeContent.classList.remove('hidden');
+        if (activeTab) {
+            activeTab.classList.add('active');
+            activeTab.classList.remove('text-slate-300');
+        }
 
-        // Força a busca das listas de lentes (OD e OE)
+        if (nomeAba === 'dashboard') pdvAtualizarDashboard();
+    }
+
+    // AUTENTICAÇÃO COM SUPABASE
+    async function fazerLogin() {
+        try {
+            const user = document.getElementById('user_login')?.value.trim() || '';
+            const pass = document.getElementById('pass_login')?.value || '';
+
+            if (!user || !pass) return alert('Informe o usuário e a senha.');
+            const email = user.includes('@') ? user : user + '@ahvstore.com';
+
+            if (!_supabase) return alert('Conexão Supabase não pronta.');
+
+            const { data, error } = await _supabase.auth.signInWithPassword({ email, password: pass });
+            if (error || !data.session) return alert('Não foi possível entrar: ' + (error?.message || 'Dados incorretos.'));
+
+            document.getElementById('login-screen').style.display = 'none';
+
+            resetarTimer();
+            await atualizarSelectBusca();
+            await pdvAtualizarDashboard();
+        } catch (e) {
+            console.error('Erro de Autenticação:', e);
+            alert('Erro de conexão ao efetuar login.');
+        }
+    }
+
+    async function fazerLogout() {
+        if (_supabase) await _supabase.auth.signOut();
+        location.reload();
+    }
+
+    async function pdvAtualizarDashboard() {
+        if (!_supabase) return;
+
+        try {
+            const agora = new Date();
+            const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
+
+            // 1. KPI Vendas e Produção
+            const { data: pedidosMes } = await _supabase
+                .from('tabela_pedidos')
+                .select('vlr_total, status_pedido, data_os')
+                .gte('data_os', primeiroDiaMes.split('T')[0]);
+            
+            let totalVendasMes = 0;
+            let qtdPedidos = 0;
+            let emProducao = 0;
+
+            if (pedidosMes) {
+                pedidosMes.forEach(p => {
+                    const v = parseFloat(p.vlr_total) || 0;
+                    totalVendasMes += v;
+                    qtdPedidos++;
+                    if (['Aguardando', 'Produção'].includes(p.status_pedido)) emProducao++;
+                });
+            }
+
+            document.getElementById('pdv_kpi_vendas').innerText = 'R$ ' + totalVendasMes.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('pdv_kpi_vendas_qtd').innerText = qtdPedidos + ' pedidos registrados';
+            document.getElementById('pdv_kpi_producao').innerText = emProducao;
+
+            // 2. KPI Armações
+            const { data: armacoess } = await _supabase.from('tabela_armacoes').select('estoque');
+            let totalEstoque = 0;
+            if(armacoess) armacoess.forEach(a => totalEstoque += (parseInt(a.estoque) || 0));
+            document.getElementById('pdv_kpi_estoque').innerText = totalEstoque;
+
+            // 3. KPI Fluxo Financeiro (Entradas x Saídas)
+            const { data: financ } = await _supabase.from('financeiro').select('valor, tipo, data');
+            let entradas = 0, saidas = 0;
+            if(financ) {
+                financ.forEach(f => {
+                    const v = parseFloat(f.valor) || 0;
+                    if(f.tipo === 'Despesa') saidas += v;
+                    else entradas += v;
+                });
+            }
+
+            document.getElementById('pdv_kpi_recebido').innerText = 'R$ ' + entradas.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('pdv_fin_entradas').innerText = 'R$ ' + entradas.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('pdv_fin_saidas').innerText = 'R$ ' + saidas.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            document.getElementById('pdv_fin_saldo').innerText = 'R$ ' + (entradas - saidas).toLocaleString('pt-BR', {minimumFractionDigits: 2});
+            
+            const ticketMedio = qtdPedidos > 0 ? (totalVendasMes / qtdPedidos) : 0;
+            document.getElementById('pdv_ticket').innerText = 'R$ ' + ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2});
+
+            // 4. Renderiza Indicadores da View
+            await carregarIndicadoresDashboard();
+
+            // 5. Renderizar Gráficos Chart.js
+            await renderizarGraficosPDV();
+
+            // 6. Tabela das Últimas Vendas
+            const { data: ultimas } = await _supabase.from('tabela_pedidos').select('num_os, nome_cliente, data_os, status_pedido, vlr_total').order('data_os', {ascending: false}).limit(5);
+            const tbody = document.getElementById('pdv_ultimas_vendas');
+            if(ultimas && ultimas.length > 0) {
+                tbody.innerHTML = ultimas.map(u => `
+                    <tr class="hover:bg-slate-50 transition">
+                        <td class="p-3 font-bold text-brand-800">${u.num_os || '---'}</td>
+                        <td class="p-3 font-medium text-slate-800">${u.nome_cliente || 'N/I'}</td>
+                        <td class="p-3 text-slate-500">${u.data_os ? new Date(u.data_os).toLocaleDateString('pt-BR') : '---'}</td>
+                        <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-800">${u.status_pedido || 'Orçamento'}</span></td>
+                        <td class="p-3 text-right font-black text-emerald-700">R$ ${parseFloat(u.vlr_total || 0).toLocaleString('pt-BR', {minimumFractionDigits:2})}</td>
+                    </tr>
+                `).join('');
+            } else {
+                tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado.</td></tr>';
+            }
+
+            // 7. Alertas Operacionais
+            const containerAlertas = document.getElementById('pdv_alertas');
+            let htmlAlertas = '';
+            if(totalEstoque < 5) htmlAlertas += `<div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center justify-between"><span>⚠️ Nível de estoque baixo! (${totalEstoque} armações)</span></div>`;
+            if(emProducao > 0) htmlAlertas += `<div class="p-2.5 rounded-lg bg-blue-50 border border-blue-200 text-blue-800 text-xs font-bold flex items-center justify-between"><span>ℹ️ Existem ${emProducao} pedidos em produção.</span></div>`;
+            containerAlertas.innerHTML = htmlAlertas || '<div class="text-xs text-emerald-600 font-bold bg-emerald-50 p-2.5 rounded-lg border border-emerald-200">✅ Todos os parâmetros operacionais estão normais.</div>';
+
+        } catch (err) {
+            console.error('Erro ao atualizar PDV:', err);
+        }
+    }
+
+    async function renderizarGraficosPDV() {
+        const { data: todosPedidos } = await _supabase.from('tabela_pedidos').select('vlr_total, status_pedido, data_os');
+        if (!todosPedidos) return;
+
+        // Processa Status
+        const statusCounts = {};
+        todosPedidos.forEach(p => {
+            const st = p.status_pedido || 'Orçamento';
+            statusCounts[st] = (statusCounts[st] || 0) + 1;
+        });
+
+        // Chart Status
+        const ctxStatus = document.getElementById('pdv_chart_status').getContext('2d');
+        if (chartStatusInstance) chartStatusInstance.destroy();
+        chartStatusInstance = new Chart(ctxStatus, {
+            type: 'doughnut',
+            data: {
+                labels: Object.keys(statusCounts),
+                datasets: [{
+                    data: Object.values(statusCounts),
+                    backgroundColor: ['#f59e0b', '#3b82f6', '#10b981', '#6366f1', '#ef4444', '#8b5cf6']
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+
+        // Chart Vendas Semestrais
+        const meses = [];
+        const faturamentoMeses = [0,0,0,0,0,0];
+        const hoje = new Date();
+
+        for (let i = 5; i >= 0; i--) {
+            const d = new Date(hoje.getFullYear(), hoje.getMonth() - i, 1);
+            meses.push(d.toLocaleDateString('pt-BR', { month: 'short' }).toUpperCase());
+        }
+
+        todosPedidos.forEach(p => {
+            if(!p.data_os) return;
+            const dataP = new Date(p.data_os);
+            const diffMeses = (hoje.getFullYear() - dataP.getFullYear()) * 12 + (hoje.getMonth() - dataP.getMonth());
+            if (diffMeses >= 0 && diffMeses < 6) {
+                faturamentoMeses[5 - diffMeses] += (parseFloat(p.vlr_total) || 0);
+            }
+        });
+
+        const ctxVendas = document.getElementById('pdv_chart_vendas').getContext('2d');
+        if (chartVendasInstance) chartVendasInstance.destroy();
+        chartVendasInstance = new Chart(ctxVendas, {
+            type: 'bar',
+            data: {
+                labels: meses,
+                datasets: [{
+                    label: 'Faturamento (R$)',
+                    data: faturamentoMeses,
+                    backgroundColor: '#1a237e',
+                    borderRadius: 6
+                }]
+            },
+            options: { responsive: true, maintainAspectRatio: false }
+        });
+    }
+
+    async function carregarPedidoSelecionado(numOS) {
+        if (!numOS) {
+            limparCamposRapido(); 
+            return;
+        }
+
+        const { data, error } = await _supabase.from('tabela_pedidos').select('*').eq('num_os', numOS).maybeSingle();
+        if (error || !data) return;
+
+        Object.keys(data).forEach(key => {
+            const campo = document.getElementById(key);
+            if (campo) campo.value = data[key] || "";
+        });
+
         if (data.tipo_lente_od) {
             await filtrarLentes('od'); 
             document.getElementById('nome_lente_od').value = data.nome_lente_od;
@@ -709,150 +1041,47 @@ async function carregarPedidoSelecionado(numOS) {
             await filtrarLentes('oe');
             document.getElementById('nome_lente_oe').value = data.nome_lente_oe;
         }
-                
-        statusAnterior = document.getElementById('status_pedido')?.value || "";
 
+        trocarAba('vendas');
         editandoPedido = true;
-
-        verificarAtraso();
-
     }
-}
 
-function navegarPara(aba) {
-    // 1. Esconde o menu de blocos e mostra a área do sistema
-    document.getElementById('menu-principal').style.display = 'none';
-    document.getElementById('sistema-content').style.display = 'block';
-    
-    // 2. Pega a barra de pesquisa (o pai do select_busca)
-    const barraPesquisa = document.getElementById('select_busca').parentElement;
-
-    if(aba === 'financeiro') {
-        // ESCONDE TUDO E DEIXA SÓ O FINANCEIRO
-        document.getElementById('os-content').style.display = 'none';
-        document.getElementById('aba-estoque').style.display = 'none';
-        document.getElementById('aba-financeiro').style.display = 'block';
-        
-        // AQUI ESTÁ O PULO DO GATO: Esconde a barra de pesquisa no financeiro
-        if (barraPesquisa) barraPesquisa.style.display = 'none';
-    } else {
-        // Se for Vendas ou Estoque, mostra a barra de pesquisa e chama o fluxo normal
-        document.getElementById('aba-financeiro').style.display = 'none';
-        if (barraPesquisa) barraPesquisa.style.display = 'flex'; 
-        abrirAba(aba);
+    async function buscarSugestoes(valor) {
+        if (valor.length < 2) return;
+        const { data: sugestoes } = await _supabase.from('tabela_armacoes').select('ref, marca, cor, tam').ilike('ref', `${valor.trim()}%`).limit(10);
+        const datalist = document.getElementById('lista_armacoes');
+        datalist.innerHTML = ''; 
+        if (sugestoes) {
+            sugestoes.forEach(item => {
+                const option = document.createElement('option');
+                option.value = `${item.ref} | ${item.cor} | ${item.tam}`;
+                option.textContent = `${item.marca} | ${item.cor} | ${item.tam}`;
+                datalist.appendChild(option);
+            });
+        }
     }
-}
 
+    async function buscarNoEstoque(valorCompleto) {
+        if (!valorCompleto) return;
+        const partes = valorCompleto.split('|');
+        const refPura = partes[0].trim();
+        const corPura = partes[1] ? partes[1].trim() : null;
 
-async function abrirRelatorioMEI() {
-    const URL_REAL = "SUA_URL"; 
-    const KEY_REAL = "SUA_KEY";
+        let query = _supabase.from('tabela_armacoes').select('*').eq('ref', refPura);
+        if (corPura) query = query.eq('cor', corPura);
 
-    try {
-        const conexaoMEI = supabase.createClient('https://gxeuheqhpsapigyozanu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4ZXVoZXFocHNhcGlneW96YW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzU3NDcsImV4cCI6MjA4OTc1MTc0N30.h_Yqrj959cpXFKSYO3wrvGQ7RXO5QEL2NeRy1QqfQJc');
-        const anoAtual = 2026;
-
-        // Busca detalhada dos dados
-        const { data, error } = await conexaoMEI
-            .from('tabela_pedidos')
-            .select('num_os, data_os, vlr_total, nome_cliente')
-            .gte('data_os', `${anoAtual}-01-01`)
-            .lte('data_os', `${anoAtual}-12-31`)
-            .order('data_os', { ascending: true });
-
-        if (error) throw error;
-
-        let totalFaturado = 0;
-let quantidade = 0;
-
-data.forEach(item => {
-    const valor = parseFloat(item.vlr_total) || 0;
-
-    if (valor > 0) {
-        totalFaturado += valor;
-        quantidade++;
+        const { data: resultados } = await query;
+        if (resultados && resultados.length > 0) {
+            const item = resultados[0]; 
+            const campoRef = document.getElementById('ref_arma');
+            campoRef.value = item.marca + " * " + item.ref + " * " + item.cor + " * " + item.tam;
+            document.getElementById('vlr_armacao').value = parseFloat(item.preco || 0).toFixed(2);
+            campoRef.style.backgroundColor = (item.estoque <= 0) ? "#fee2e2" : "#dcfce7";
+            if (item.estoque <= 0) alert("⚠️ ATENÇÃO: Armação com Estoque Zerado!");
+            calcularTotal();
+        }
     }
-});
 
-const ticketMedio = quantidade > 0 ? (totalFaturado / quantidade) : 0;
-        const limiteMEI = 81000;
-        const saldoRestante = limiteMEI - totalFaturado;
-
-        // Criando o conteúdo da página de impressão
-        const janelaImpressao = window.open('', '', 'width=900,height=700');
-        
-        janelaImpressao.document.write(`
-            <html>
-            <head>
-                <title>Relatório MEI 2026 - Ótica AHV</title>
-                <style>
-                    body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
-                    .header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 20px; }
-                    table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-                    th, td { border: 1px solid #ccc; padding: 10px; text-align: left; }
-                    th { background-color: #f2f2f2; }
-                    .resumo { margin-top: 30px; padding: 15px; border: 1px solid #000; background: #fafafa; }
-                    .footer { margin-top: 50px; text-align: center; font-size: 12px; }
-                    @media print { .no-print { display: none; } }
-                </style>
-            </head>
-            <body>
-                <div class="header">
-                    <h1>ÓTICA AHV STORE</h1>
-                    <h2>Relatório Anual de Faturamento MEI - Ano Base ${anoAtual}</h2>
-                </div>
-
-                <table>
-                    <thead>
-                        <tr>
-                            <th>Data</th>
-                            <th>Nº OS</th>
-                            <th>Cliente</th>
-                            <th>Valor (R$)</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        ${data.map(v => `
-                            <tr>
-                                <td>${new Date(v.data_os).toLocaleDateString('pt-BR', {timeZone: 'UTC'})}</td>
-                                <td>${v.num_os || '---'}</td>
-                                <td>${v.nome_cliente || 'Não informado'}</td>
-                                <td>${parseFloat(v.vlr_total).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
-                            </tr>
-                        `).join('')}
-                    </tbody>
-                </table>
-
-<div class="resumo">
-    <p><strong>Faturamento Bruto:</strong> R$ ${totalFaturado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-
-    <p><strong>Quantidade de Vendas:</strong> ${quantidade}</p>
-
-    <p><strong>Ticket Médio:</strong> R$ ${ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-
-    <hr>
-
-    <p><strong>Limite Anual MEI:</strong> R$ ${limiteMEI.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-
-    <p><strong>Saldo Disponível:</strong> R$ ${saldoRestante.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
-</div>
-                <div class="footer">
-                    <p>Documento gerado em ${new Date().toLocaleString('pt-BR')}</p>
-                    <button class="no-print" onclick="window.print()" style="padding: 10px 20px; cursor: pointer; margin-top: 20px;">Imprimir Agora</button>
-                </div>
-            </body>
-            </html>
-        `);
-
-        janelaImpressao.document.close();
-
-    } catch (err) {
-        alert("Erro ao gerar relatório para impressão: " + err.message);
-    }
-}
-    // --- BUSCA NAS TABELAS (CONVERSA ENTRE TABELAS) ---
-
-    // 1. Busca Lente por Código
     async function buscarPorCodigo(lado) {
         const cod = document.getElementById('cod_lente_' + lado).value;
         if (!cod) return;
@@ -863,7 +1092,6 @@ const ticketMedio = quantidade > 0 ? (totalFaturado / quantidade) : 0;
         }
     }
 
-    // 2. Busca Lente por Nome
     async function buscarPorNome(lado) {
         const nome = document.getElementById('nome_lente_' + lado).value;
         if (!nome) return;
@@ -874,38 +1102,6 @@ const ticketMedio = quantidade > 0 ? (totalFaturado / quantidade) : 0;
         }
     }
 
-// 3. Busca Armação por Referência (Ajustado para múltiplos resultados)
-async function buscarNoEstoque(valorCompleto) {
-    if (!valorCompleto) return;
-    
-    const partes = valorCompleto.split('|');
-    const refPura = partes[0].trim();
-    const corPura = partes[1] ? partes[1].trim() : null;
-
-    let query = _supabase.from('tabela_armacoes').select('*').eq('ref', refPura);
-
-    if (corPura) {
-        query = query.eq('cor', corPura);
-    }
-
-    const { data: resultados } = await query;
-
-    if (resultados && resultados.length > 0) {
-        const item = resultados[0]; 
-        const campoRef = document.getElementById('ref_arma');
-
-        // Preenche com os nomes das variáveis em minúsculo: item.marca, item.ref, etc.
-        campoRef.value = item.marca + " * " + item.ref + " * " + item.cor + " * " + item.tam;
-        document.getElementById('vlr_armacao').value = parseFloat(item.preco || 0).toFixed(2);
-        
-        campoRef.style.backgroundColor = (item.estoque <= 0) ? "#ffcdd2" : "#c8e6c9";
-        
-        if (item.estoque <= 0) alert("⚠️ ESTOQUE ZERADO!");
-        if (typeof calcularTotal === "function") calcularTotal();
-    }
-}
-
-    // 4. Cálculo de Preço Automático (Lentes + Tratamentos)
     async function atualizarPrecoAutomatico() {
         const nomeOD = document.getElementById('nome_lente_od').value;
         const nomeOE = document.getElementById('nome_lente_oe').value;
@@ -930,1079 +1126,383 @@ async function buscarNoEstoque(valorCompleto) {
         calcularTotal();
     }
 
-    // --- SALVAR E FINANCEIRO ---
-async function salvarPedido() {
-    const os = document.getElementById('num_os').value;
-    const nome = document.getElementById('nome_cliente').value;
-    if(!os || !nome) return alert("Preencha Nome e O.S.");
+    function calcularTotal() {
+        const armacao = parseFloat(document.getElementById('vlr_armacao').value) || 0;
+        const lentes = parseFloat(document.getElementById('vlr_lentes').value) || 0;
+        const desconto = parseFloat(document.getElementById('vlr_desconto').value) || 0;
+        document.getElementById('vlr_total').value = (armacao + lentes - desconto).toFixed(2); 
+    }
 
-    const dados = {};
-    // Lista de campos que o sistema deve IGNORAR ao salvar um pedido
-    const camposParaIgnorar = [
-        'user_login', 'pass_login', 'select_busca', 
-        'filtro_inicio', 'filtro_fim', 'busca_fin_cliente'
-    ];
+    // SALVAMENTO DE REGISTROS SUPABASE
+    async function salvarPedido() {
+        const os = document.getElementById('num_os').value;
+        const nome = document.getElementById('nome_cliente').value;
+        if(!os || !nome) return alert("Preencha ao menos Nome do Cliente e Nº O.S.");
 
-    document.querySelectorAll('input, select, textarea').forEach(el => { 
-        // Só salva se o campo tiver ID e não estiver na lista de ignorados
-        if(el.id && !camposParaIgnorar.includes(el.id)) {
-            dados[el.id] = el.value || null;
+        const dados = {};
+        const camposParaIgnorar = ['user_login', 'pass_login', 'select_busca', 'filtro_inicio', 'filtro_fim', 'busca_fin_cliente'];
+
+        document.querySelectorAll('input, select, textarea').forEach(el => { 
+            if(el.id && !camposParaIgnorar.includes(el.id)) {
+                dados[el.id] = el.value || null;
+            }
+        });
+
+        const { error } = await _supabase.from('tabela_pedidos').upsert(dados, { onConflict: 'num_os' });
+        if (error) {
+            alert("Erro ao salvar O.S.: " + error.message);
+        } else {
+            alert("Pedido O.S. gravado com sucesso!");
+            editandoPedido = true;
+            await atualizarSelectBusca();
         }
-    });
-
-    const { error } = await _supabase.from('tabela_pedidos').upsert(dados, { onConflict: 'num_os' });
-    if (error) {
-        console.error("Erro ao salvar pedido:", error);
-        alert("Erro: " + error.message);
-    } else {
-        alert("Pedido salvo!");
-        editandoPedido = true;
-        atualizarSelectBusca();
     }
-}
-function calcularTotal() {
-    const armacao = parseFloat(document.getElementById('vlr_armacao').value) || 0;
-    const lentes = parseFloat(document.getElementById('vlr_lentes').value) || 0;
-    const desconto = parseFloat(document.getElementById('vlr_desconto').value) || 0;
-    
-    // Removemos o "R$" e mantemos o ponto decimal para o banco entender
-    const total = (armacao + lentes - desconto).toFixed(2);
-    document.getElementById('vlr_total').value = total; 
 
-atualizarStatusAutomatico();
-
-}
-
-
-function abrirAba(nome) {
-    // 1. Esconde/Mostra o corpo da O.S.
-    document.getElementById('os-content').style.display = (nome === 'vendas' ? 'flex' : 'none');
-    
-    // 2. Esconde/Mostra a aba de estoque que criamos
-    document.getElementById('aba-estoque').style.display = (nome === 'estoque' ? 'block' : 'none');
-
-    // 3. PEGA A BARRA BRANCA (A que contém o 'select_busca') E ESCONDE
-    const barraPesquisa = document.getElementById('select_busca').parentElement;
-    if (barraPesquisa) {
-        // Se for vendas, mostra (flex). Se for estoque, esconde (none).
-        barraPesquisa.style.display = (nome === 'vendas' ? 'flex' : 'none');
+    async function salvarArmacao() {
+        const dados = {
+            mat: document.getElementById('arm_material').value,
+            ref: document.getElementById('arm_referencia').value,
+            marca: document.getElementById('arm_marca').value,
+            tam: document.getElementById('arm_tamanho').value,
+            cor: document.getElementById('arm_cor').value,
+            estoque: parseInt(document.getElementById('arm_estoque').value) || 0,
+            custo: parseFloat(document.getElementById('arm_custo').value) || 0,
+            preco: parseFloat(document.getElementById('arm_venda').value) || 0
+        };
+        const { error } = await _supabase.from('tabela_armacoes').insert(dados);
+        if (error) alert("Erro: " + error.message);
+        else { alert("Armação cadastrada no estoque!"); limparCampos('form-armacoes'); }
     }
-}
+
+    async function salvarLente() {
+        const dados = {
+            tipo: document.getElementById('len_tipo').value,
+            cod: document.getElementById('len_codigo').value,
+            nome: document.getElementById('len_nome').value,
+            custo: parseFloat(document.getElementById('len_custo').value) || 0,
+            preco: parseFloat(document.getElementById('len_venda').value) || 0,
+            fornecedor: document.getElementById('len_fornecedor').value
+        };
+        const { error } = await _supabase.from('tabela_lentes').insert(dados);
+        if (error) alert("Erro: " + error.message);
+        else { alert("Lente cadastrada no catálogo!"); limparCampos('form-lentes'); }
+    }
+
+    async function salvarTratamento() {
+        const dados = {
+            tratamento: document.getElementById('tra_nome').value,
+            marca: document.getElementById('tra_marca').value,
+            custo: parseFloat(document.getElementById('tra_custo').value) || 0,
+            preco: parseFloat(document.getElementById('tra_venda').value) || 0,
+            lab: document.getElementById('tra_lab').value
+        };
+        const { error } = await _supabase.from('tabela_tratamentos').insert(dados);
+        if (error) alert("Erro: " + error.message);
+        else { alert("Tratamento cadastrado com sucesso!"); limparCampos('form-tratamentos'); }
+    }
+
+    async function salvarFinanceiro() {
+        const valor = document.getElementById('fin_valor').value;
+        const tipo = document.getElementById('fin_tipo_pag').value;
+        const desc = document.getElementById('fin_desc').value;
+        const dataFin = document.getElementById('fin_data').value || new Date().toISOString();
+
+        if (!valor) return alert("Informe o valor do lançamento!");
+
+        const { error } = await _supabase.from('financeiro').insert([
+            { valor: parseFloat(valor), tipo: tipo, descricao: desc, data: dataFin }
+        ]);
+
+        if (error) alert("Erro ao salvar financeiro: " + error.message);
+        else {
+            alert("Lançamento confirmado no fluxo de caixa!");
+            document.getElementById('fin_valor').value = '';
+            document.getElementById('fin_desc').value = '';
+            trocarAba('dashboard');
+        }
+    }
+
     async function atualizarSelectBusca() {
         const { data } = await _supabase.from('tabela_pedidos').select('num_os, nome_cliente').order('num_os', { ascending: false });
         const s = document.getElementById('select_busca');
-        s.innerHTML = '<option value=""></option>';
+        s.innerHTML = '<option value="">Buscar Cliente / O.S...</option>';
         if (data) data.forEach(p => s.add(new Option(`${p.num_os} | ${p.nome_cliente}`, p.num_os)));
 
-const sf = document.getElementById('busca_fin_cliente'); // O novo seletor do financeiro
-    if(sf && data) {
-        sf.innerHTML = '<option value=""></option>';
-        data.forEach(p => sf.add(new Option(`${p.num_os} | ${p.nome_cliente}`, p.num_os)));
-    }
-    // --- FIM DA INSERÇÃO ---
-}
-window.onload = function() { 
-    preencherSeletores(); // <-- Essa linha é a que "destrava" as caixas de grau
-    document.getElementById('data_os').value = new Date().toISOString().split('T')[0]; 
-};
-
-function preencherSeletores() {
-    const fmt = (n) => (n > 0 ? "+" : "") + n.toFixed(2).replace('.', ',');
-    
-    // Preenche Esférico (+8 a -12)
-    document.querySelectorAll('.sel-esf').forEach(s => { 
-        s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 8; i >= -12; i -= 0.25) s.add(new Option(i === 0 ? "0,00" : fmt(i), i.toFixed(2))); 
-    });
-    
-    // Preenche Cilíndrico (0 a -8)
-    document.querySelectorAll('.sel-cil').forEach(s => { 
-        s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 0; i >= -6; i -= 0.25) s.add(new Option(i.toFixed(2).replace('.', ','), i.toFixed(2))); 
-    });
-    
-    // Preenche Eixo (0 a 180)
-    document.querySelectorAll('.sel-eixo').forEach(s => { 
-        s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 0; i <= 180; i++) s.add(new Option(i + "°", i)); 
-    });
-    
-    // Preenche Adição (0 a 4.5)
-    document.querySelectorAll('.sel-add').forEach(s => { 
-        s.innerHTML = ""; s.add(new Option("", "")); 
-        for (let i = 0; i <= 3.5; i += 0.25) s.add(new Option(fmt(i), i.toFixed(2))); 
-    });
-}
-
-
-function atualizarTudo() {
-    ['od', 'oe'].forEach(l => {
-        // Pega os valores de Longe e Adição
-        const esfL = parseFloat(document.getElementById(`e_${l}_l`).value) || 0;
-        const add = parseFloat(document.getElementById(`add_${l}`).value) || 0;
-        const dnpL = parseFloat(document.getElementById(`dnp_${l}_l`).value) || 0;
-        const altL = document.getElementById(`alt_${l}_l`).value;
-
-        // Calcula o Esférico de Perto (Longe + Adição)
-        if(document.getElementById(`e_${l}_l`).value || document.getElementById(`add_${l}`).value) {
-            const totalPerto = esfL + add;
-            document.getElementById(`e_${l}_p`).value = totalPerto === 0 ? "Plano" : (totalPerto > 0 ? "+" : "") + totalPerto.toFixed(2).replace('.', ',');
+        const sf = document.getElementById('busca_fin_cliente');
+        if(sf && data) {
+            sf.innerHTML = '<option value="">-- Selecione o Cliente --</option>';
+            data.forEach(p => sf.add(new Option(`${p.num_os} | ${p.nome_cliente}`, p.num_os)));
         }
-
-        // Copia o Cilíndrico e o Eixo para o Perto
-        const cilSelect = document.getElementById(`c_${l}_l`);
-        const cilTexto = cilSelect.options[cilSelect.selectedIndex]?.text || "";
-        document.getElementById(`c_${l}_p`).value = cilTexto;
-        document.getElementById(`x_${l}_p`).value = document.getElementById(`x_${l}_l`).value ? document.getElementById(`x_${l}_l`).value + "°" : "";
-
-        // Calcula DNP de Perto (DNP Longe - 2.5)
-        document.getElementById(`dnp_${l}_p`).value = dnpL ? (dnpL - 2.5).toFixed(1).replace('.', ',') : "";
-        
-        // Copia a Altura
-        document.getElementById(`alt_${l}_p`).value = altL;
-    });
-}
-
-function calcularDiametro() {
-    const p = parseFloat(document.getElementById('m_ponte').value) || 0;
-    const ah = parseFloat(document.getElementById('m_aro_h').value) || 0;
-    const am = parseFloat(document.getElementById('m_aro_m').value) || 0;
-    const dnpOD = parseFloat(document.getElementById('dnp_od_l').value) || 0;
-    const dnpOE = parseFloat(document.getElementById('dnp_oe_l').value) || 0;
-    const dnpMaior = Math.max(dnpOD, dnpOE);
-
-    if (p > 0 && ah > 0 && am > 0 && dnpMaior > 0) {
-        const resultado = Math.ceil((p + ah) - (dnpMaior * 2) + am + 2);
-        document.getElementById('m_diametro').value = "Ø " + resultado;
-    } else {
-        document.getElementById('m_diametro').value = "";
-    }
-}
-
-
-async function filtrarLentes(lado) {
-    const tipoSelecionado = document.getElementById(`tipo_lente_${lado}`).value;
-    const seletorNomes = document.getElementById(`nome_lente_${lado}`);
-    
-    // Limpa a lista atual para não acumular nomes antigos
-    seletorNomes.innerHTML = '<option value="">Carregando...</option>';
-
-    if (!tipoSelecionado) {
-        seletorNomes.innerHTML = '<option value=""></option>';
-        return;
     }
 
-    // Busca no Supabase apenas as lentes que pertencem ao tipo escolhido
-    const { data, error } = await _supabase
-        .from('tabela_lentes')
-        .select('nome')
-        .eq('tipo', tipoSelecionado)
-        .order('nome', { ascending: true });
-
-    if (error) {
-        console.error("Erro ao buscar lentes:", error);
-        seletorNomes.innerHTML = '<option value="">Erro ao carregar</option>';
-        return;
-    }
-
-    // Preenche a caixa de seleção com os nomes reais do seu banco de dados
-    seletorNomes.innerHTML = '<option value=""></option>';
-    data.forEach(item => {
-        seletorNomes.add(new Option(item.nome, item.nome));
-    });
-}
-
-
-// Função para Imprimir a O.S.
-function imprimirOS() {
-    window.print();
-}
-
-// Função para Limpar a Tela (Novo Pedido)
-function limparTela() {
-    if (confirm("Deseja limpar todos os campos para um novo pedido?")) {
-        // Limpa todos os inputs, selects e textareas
-        document.querySelectorAll('input, select, textarea').forEach(el => {
-            if (!['user_login', 'pass_login'].includes(el.id)) {
-                el.value = "";
-            }
-        });
-        
-        // Reseta campos específicos
-        document.getElementById('data_os').value = new Date().toISOString().split('T')[0];
-        document.getElementById('vlr_lentes').value = "0,00";
-        document.getElementById('vlr_total').value = "0,00";
-        
-        // Reseta o estado de edição
-        editandoPedido = false;
-        alert("Tela limpa!");
-    }
-}
-
-// Função para Imprimir a O.S.
-function imprimirGeral() {
-    window.print();
-}
-
-// Função para Via Laboratório (Esconde preços antes de imprimir)
-function imprimirLaboratorio() {
-    document.body.classList.add('modo-lab');
-    window.print();
-    document.body.classList.remove('modo-lab');
-}
-
-// Função para Limpar a Tela (Novo Pedido)
-function novoPedido() {
-    if (confirm("Deseja limpar todos os campos para um novo pedido?")) {
-        // Limpa todos os campos, exceto o login
-        document.querySelectorAll('input, select, textarea').forEach(el => {
-            if (!['user_login', 'pass_login'].includes(el.id)) {
-                el.value = "";
-            }
-        });
-        
-        // Reseta valores padrão
-        document.getElementById('data_os').value = new Date().toISOString().split('T')[0];
-        document.getElementById('vlr_lentes').value = "0.00";
-        document.getElementById('vlr_total').value = "0.00";
-        
-        editandoPedido = false;
-        alert("Tela pronta para novo pedido!");
-    }
-}
-
-async function fazerLogout() {
-    const { error } = await _supabase.auth.signOut();
-    if (error) {
-        alert("Erro ao sair: " + error.message);
-    } else {
-        // Recarrega a página para voltar à tela de login
-        location.reload();
-    }
-}
-
-
-function alternarForm(idDesejado) {
-    // 1. Esconde todos os formulários primeiro
-    const todosForms = document.querySelectorAll('.form-estoque');
-    todosForms.forEach(f => f.style.display = 'none');
-
-    // 2. Mostra apenas o que você clicou
-    document.getElementById(idDesejado).style.display = 'block';
-}
-
-// ... outras funções que já existem ...
-
-function voltarAoMenu() {
-    // 1. Esconde a área de conteúdo do sistema
-    document.getElementById('sistema-content').style.display = 'none';
-
-    // 2. Garante que todas as abas internas fiquem escondidas
-    document.getElementById('os-content').style.display = 'none';
-    document.getElementById('aba-estoque').style.display = 'none';
-    
-    // LINHA IMPORTANTE: Faz o financeiro sumir para o menu aparecer limpo
-    if(document.getElementById('aba-financeiro')) {
-        document.getElementById('aba-financeiro').style.display = 'none';
-    }
-
-    // 3. Mostra o Menu de Blocos (Dashboard) novamente
-    document.getElementById('menu-principal').style.display = 'grid';
-}
-// --- FUNÇÕES DE LANÇAMENTO (COLE AQUI) ---
-
-// --- FUNÇÕES DE LANÇAMENTO ---
-
-async function salvarArmacao() {
-    const dados = {
-        mat: document.getElementById('arm_material').value,
-        ref: document.getElementById('arm_referencia').value,
-        marca: document.getElementById('arm_marca').value,
-        tam: document.getElementById('arm_tamanho').value,
-        cor: document.getElementById('arm_cor').value,
-        estoque: parseInt(document.getElementById('arm_estoque').value) || 0,
-        custo: parseFloat(document.getElementById('arm_custo').value) || 0,
-        preco: parseFloat(document.getElementById('arm_venda').value) || 0
-    };
-
-    const { error } = await _supabase.from('tabela_armacoes').insert(dados);
-    if (error) alert("Erro: " + error.message);
-    else { alert("Armação lançada!"); limparCampos('form-armacoes'); }
-}
-
-async function salvarLente() {
-    const dados = {
-        tipo: document.getElementById('len_tipo').value,
-        cod: document.getElementById('len_codigo').value,
-        nome: document.getElementById('len_nome').value,
-        custo: parseFloat(document.getElementById('len_custo').value) || 0,
-        preco: parseFloat(document.getElementById('len_venda').value) || 0,
-        fornecedor: document.getElementById('len_fornecedor').value
-    };
-
-    const { error } = await _supabase.from('tabela_lentes').insert(dados);
-    if (error) alert("Erro: " + error.message);
-    else { alert("Lente lançada!"); limparCampos('form-lentes'); }
-}
-
-async function salvarTratamento() {
-    const dados = {
-        tratamento: document.getElementById('tra_nome').value,
-        marca: document.getElementById('tra_marca').value,
-        custo: parseFloat(document.getElementById('tra_custo').value) || 0,
-        preco: parseFloat(document.getElementById('tra_venda').value) || 0,
-        lab: document.getElementById('tra_lab').value
-    };
-
-    const { error } = await _supabase.from('tabela_tratamentos').insert(dados);
-    if (error) alert("Erro: " + error.message);
-    else { alert("Tratamento lançado!"); limparCampos('form-tratamentos'); }
-}
-
-function limparCampos(idForm) {
-    document.querySelectorAll(`#${idForm} input, #${idForm} select`).forEach(el => el.value = "");
-}
-
-// ESTA É A FUNÇÃO QUE FAZ O FINANCEIRO FUNCIONAR
-async function salvarFinanceiro() {
-    const valor = document.getElementById('fin_valor').value;
-    const tipo = document.getElementById('fin_tipo').value;
-    const desc = document.getElementById('fin_desc').value;
-
-    if (!valor) return alert("Insira um valor!");
-
-    const { error } = await _supabase.from('financeiro').insert([
-        { valor: parseFloat(valor), tipo: tipo, descricao: desc, data: new Date().toISOString() }
-    ]);
-
-    if (error) alert("Erro ao salvar: " + error.message);
-    else {
-        alert("Lançamento realizado!");
-        document.getElementById('fin_valor').value = '';
-        document.getElementById('fin_desc').value = '';
-        voltarAoMenu();
-    }
-}
-
-// CORREÇÃO DA NAVEGAÇÃO: Adicione esta linha dentro da sua função abrirAba(nome)
-// document.getElementById('aba-financeiro').style.display = (nome === 'financeiro' ? 'block' : 'none');
-
-// ... (aqui termina sua última função atual, como salvarTratamento ou limparCampos)
-
-async function salvarFinanceiro() {
-    const valor = document.getElementById('fin_valor').value;
-    const tipo = document.getElementById('fin_tipo').value;
-    const desc = document.getElementById('fin_desc').value;
-
-    if (!valor) return alert("Insira um valor!");
-
-    const { error } = await _supabase.from('financeiro').insert([
-        { valor: parseFloat(valor), tipo: tipo, descricao: desc, data: new Date().toISOString() }
-    ]);
-
-    if (error) alert("Erro ao salvar: " + error.message);
-    else {
-        alert("Lançamento realizado!");
-        document.getElementById('fin_valor').value = '';
-        document.getElementById('fin_desc').value = '';
-        voltarAoMenu();
-    }
-}
-// FUNÇÃO PARA NAVEGAR PARA O FINANCEIRO
-function navegarParaFinanceiro() {
-    // Esconde as outras abas conhecidas
-    if(document.getElementById('os-content')) document.getElementById('os-content').style.display = 'none';
-    if(document.getElementById('aba-estoque')) document.getElementById('aba-estoque').style.display = 'none';
-    if(document.getElementById('menu-principal')) document.getElementById('menu-principal').style.display = 'none';
-    
-    // Mostra o conteúdo do sistema e a aba financeira
-    document.getElementById('sistema-content').style.display = 'block';
-    document.getElementById('aba-financeiro').style.display = 'block';
-}
-
-async function executarLancamentoFinanceiro() {
-    const valor = document.getElementById('fin_valor').value;
-    const tipo = document.getElementById('fin_tipo').value;
-    const desc = document.getElementById('fin_desc').value;
-
-    if (!valor) return alert("Por favor, insira um valor!");
-
-    const { error } = await _supabase.from('financeiro').insert([
-        { valor: parseFloat(valor), tipo: tipo, descricao: desc, data: new Date().toISOString() }
-    ]);
-
-    if (error) {
-        alert("Erro ao salvar: " + error.message);
-    } else {
-        alert("Lançamento financeiro realizado com sucesso!");
-        
-        // LIMPA OS CAMPOS PARA O PRÓXIMO LANÇAMENTO
-        document.getElementById('fin_valor').value = '';
-        document.getElementById('fin_desc').value = '';
-        
-        // APAGUE OU COMENTE A LINHA ABAIXO:
-        // voltarAoMenu(); <-- É essa linha que está te tirando da tela!
-    }
-}
-// --- FUNÇÃO ÚNICA PARA O FINANCEIRO (COLE NO FINAL DO SCRIPT) ---
-// Ativa a tela financeira e já puxa os totais do mês
-function irParaFinanceiro() {
-    document.getElementById('menu-principal').style.display = 'none';
-    document.getElementById('sistema-content').style.display = 'block';
-
-    if(document.getElementById('os-content')) document.getElementById('os-content').style.display = 'none';
-    if(document.getElementById('aba-estoque')) document.getElementById('aba-estoque').style.display = 'none';
-
-    if(document.getElementById('aba-financeiro')) {
-        document.getElementById('aba-financeiro').style.display = 'block';
-    }
-
-    const barra = document.getElementById('select_busca')?.parentElement;
-    if (barra) barra.style.display = 'none';
-
-    // Chama o cálculo dos cards
-    atualizarResumoMensal(); 
-}
-
-// Faz a soma proativa de Vendas vs Despesas no banco
-
-async function atualizarResumoMensal() {
-    const dInicio = document.getElementById('filtro_inicio').value;
-    const dFim = document.getElementById('filtro_fim').value;
-    const agora = new Date();
-    
-    let inicio = dInicio || new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString().split('T')[0];
-    let fim = dFim || new Date(agora.getFullYear(), agora.getMonth() + 1, 0).toISOString().split('T')[0];
-
-    const { data: lancamentos, error } = await _supabase
-        .from('financeiro')
-        .select('id, valor, tipo, descricao, data')
-        .gte('data', inicio + "T00:00:00.000Z")
-        .lte('data', fim + "T23:59:59.999Z")
-        .order('data', { ascending: true });
-
-    if (error) return console.error(error);
-
-    let vdas = 0, dsps = 0;
-    
-    // Pega as duas novas tabelas
-    const corpoEntradas = document.getElementById('corpo_entradas');
-    const corpoSaidas = document.getElementById('corpo_saidas');
-    
-    corpoEntradas.innerHTML = ""; 
-    corpoSaidas.innerHTML = "";
-
-    if (lancamentos) {
-        lancamentos.forEach(item => {
-            const v = parseFloat(item.valor) || 0;
-            // Define o que é despesa (Saída)
-            const isDespesa = (item.tipo === "Despesa" || item.tipo === "Lentes" || item.tipo === "Montagens" || item.tipo === "Logistica" || item.tipo === "Impostos/Taxas");
-            
-            if (isDespesa) dsps += v;
-            else vdas += v;
-
-            const tr = document.createElement('tr');
-            tr.style.borderBottom = "1px solid #eee";
-            tr.innerHTML = `
-                <td style="padding: 8px;">${new Date(item.data).toLocaleDateString('pt-BR')}</td>
-                <td style="padding: 8px;">${item.descricao || '-'}</td>
-                <td style="padding: 8px; text-align: right; color: ${isDespesa ? 'red' : 'green'}; font-weight: bold;">
-                    R$ ${v.toFixed(2).replace('.', ',')}
-                </td>
-                <td style="padding: 8px; text-align: center;">
-                    <button onclick="prepararEdicao('${item.id}', '${v}', '${item.tipo}', '${item.data.split('T')[0]}', '${item.descricao || ""}')" 
-                            style="background: #1a237e; color: white; border: none; padding: 4px 8px; border-radius: 4px; cursor: pointer; font-size: 10px;">
-                        EDITAR
-                    </button>
-                </td>
-            `;
-
-            // Envia para a tabela correta com base no tipo
-            if (isDespesa) {
-                tr.style.color = "#c62828"; // Texto Vermelho
-                corpoSaidas.appendChild(tr);
-            } else {
-                tr.style.color = "#2e7d32"; // Texto Verde
-                corpoEntradas.appendChild(tr);
-            }
-        });
-    }
-
-    // Atualiza os valores nos cards de resumo do topo
-    document.getElementById('resumo_vendas').innerText = vdas.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    document.getElementById('resumo_despesas').innerText = dsps.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-    document.getElementById('resumo_receita').innerText = (vdas - dsps).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' });
-}
-
-
-function prepararEdicao(id, valor, tipo, data, descricao) {
-    // 1. Guarda o ID na variável global que criamos lá no topo
-    idEdicao = id;
-
-    // 2. Preenche os campos do formulário com os dados da linha clicada
-    document.getElementById('fin_valor').value = valor;
-    document.getElementById('fin_tipo_pag').value = tipo;
-    document.getElementById('fin_data').value = data;
-    document.getElementById('fin_desc').value = descricao;
-
-    // 3. Muda o texto do botão CONFIRMAR para você saber que está editando
-    // Procure o botão que chama a função salvarTudoNoBanco
-    const btnConfirmar = document.querySelector("button[onclick='salvarTudoNoBanco()']");
-    if (btnConfirmar) {
-        btnConfirmar.innerText = "ATUALIZAR";
-        btnConfirmar.style.background = "#1a237e"; // Muda para azul para destacar
-    }
-
-    // 4. Sobe a página para o formulário aparecer na tela
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-// FUNÇÃO PARA IMPRIMIR O RELATÓRIO COM A LISTA
-
-function gerarRelatorioFinanceiro() {
-    // 1. Pega os valores totais dos cards
-    var vdasTotal = document.getElementById('resumo_vendas').innerText;
-    var dspsTotal = document.getElementById('resumo_despesas').innerText;
-    var rectTotal = document.getElementById('resumo_receita').innerText;
-    
-    // 2. Prepara para separar as descrições
-    var linhasVendas = "";
-    var linhasDespesas = "";
-
-    // 3. Pega as linhas da tabela que está na tela e separa o que é venda do que é gasto
-    var linhasAtuais = document.querySelectorAll('#corpo_entradas tr, #corpo_saidas tr'); 
-   
-    linhasAtuais.forEach(function(tr) {
-        var texto = tr.innerHTML;
-        // Se o valor na linha for vermelho (contém 'red'), mandamos para o bloco de Despesas
-        if (texto.indexOf('red') !== -1) {
-            linhasDespesas += "<tr>" + texto + "</tr>";
-        } else {
-            linhasVendas += "<tr>" + texto + "</tr>";
-        }
-    });
-
-    // --- DAQUI PARA BAIXO É O QUE MUDA PARA RESOLVER O APP ---
-
-    // Guardamos o sistema original para ele voltar depois
-    var conteudoOriginal = document.body.innerHTML;
-
-// Monta o Layout do Relatório
-    var html = "<html><head><style>";
-    html += "body{font-family:sans-serif; padding:20px; background:white;}";
-    html += "table{width:100%; border-collapse:collapse; margin-bottom:20px;}";
-    html += "th,td{padding:8px; border-bottom:1px solid #eee; font-size:12px;}";
-    html += ".titulo-secao{background:#f0f0f0; font-weight:bold; padding:10px; border-left:5px solid #1a237e; margin-bottom:5px;}";
-    html += ".total-bloco{text-align:right; font-weight:bold; padding:10px; font-size:14px;}";
-    
-    // ABAIXO AS REGRAS PARA SUMIR O EDITAR
-    html += "button{display:none !important;}"; 
-    html += "td:last-child, th:last-child{display:none !important;}"; 
-    
-    html += "</style></head><body>";
-    html += "<h2 style='text-align:center'>RELATÓRIO FINANCEIRO - ÓTICA AHV</h2>";
-
-    html += "<div class='titulo-secao'>VENDAS</div>";
-    html += "<table><thead><tr><th>Data</th><th>Descrição</th><th style='text-align:right'>Valor</th></tr></thead>";
-    html += "<tbody>" + (linhasVendas || "<tr><td colspan='3'>Sem lançamentos</td></tr>") + "</tbody></table>";
-    html += "<div class='total-bloco' style='color:green'>Total Vendas: " + vdasTotal + "</div>";
-
-    html += "<div class='titulo-secao'>DESPESAS</div>";
-    html += "<table><thead><tr><th>Data</th><th>Descrição</th><th style='text-align:right'>Valor</th></tr></thead>";
-    html += "<tbody>" + (linhasDespesas || "<tr><td colspan='3'>Sem lançamentos</td></tr>") + "</tbody></table>";
-    html += "<div class='total-bloco' style='color:red'>Total Despesas: " + dspsTotal + "</div>";
-
-    html += "<hr><div style='text-align:right; font-size:18px;'><b>RECEITA: <span style='color:blue'>" + rectTotal + "</span></b></div>";
-    html += "</body></html>";
-
-    // Substitui a tela do sistema pelo relatório
-    document.body.innerHTML = html;
-
-    // Chama a ponte de impressão do Android Studio (AndroidPrint)
-    if (window.AndroidPrint) {
-        AndroidPrint.printTokens();
-    } else {
-        window.print();
-    }
-
-    // Após 1 segundo, volta o sistema financeiro para a tela
-    setTimeout(function() {
-        document.body.innerHTML = conteudoOriginal;
-        // Se os botões pararem de funcionar ao voltar, remova o "//" da linha abaixo:
-        // window.location.reload();
-    }, 1000);
-}
-
-async function puxarDadosPedido(numOS) {
-    // SE CLICAR NO ESPAÇO EM BRANCO, LIMPA TUDO E PARA
-    if (!numOS || numOS === "") {
-        document.getElementById('fin_valor').value = "";
-        document.getElementById('fin_desc').value = "";
-        document.getElementById('corpo_parcelas_video').innerHTML = "";
-        document.getElementById('res_falta_video').innerText = "0,00";
-        return; 
-    }
-
-    // 1. Busca os dados do pedido (Valor e Nome)
-    const { data: pedido } = await _supabase
-        .from('tabela_pedidos')
-        .select('nome_cliente, vlr_total, num_os')
-        .eq('num_os', numOS)
-        .maybeSingle();
-
-    if (pedido) {
-        document.getElementById('fin_valor').value = parseFloat(pedido.vlr_total).toFixed(2);
-        document.getElementById('fin_taxa').value = 0; 
-        
-        const descGerada = "Recebimento: " + pedido.nome_cliente + " (OS " + pedido.num_os + ")";
-        document.getElementById('fin_desc').value = descGerada;
-
-
-        // 2. BUSCA NO BANCO: Já existem parcelas para essa OS?
-        const { data: parcelasExistentes } = await _supabase
-            .from('financeiro')
-            .select('*')
-            .ilike('descricao', `%OS ${pedido.num_os}%`)
-            .order('data', { ascending: true });
-
-        const corpo = document.getElementById('corpo_parcelas_video');
-        corpo.innerHTML = ""; 
-
-        if (parcelasExistentes && parcelasExistentes.length > 0) {
-            parcelasExistentes.forEach((p, i) => {
-                const tr = document.createElement('tr');
-                tr.style.borderBottom = "1px solid #eee";
-                
-                // Lógica de cores: verde para pago, branco para pendente
-                const corFundo = p.pago ? "#e8f5e9" : "#ffffff";
-                tr.style.backgroundColor = corFundo;
-
-                tr.innerHTML = `
-                    <td style="padding: 5px; border-right: 1px solid #ccc;">${i + 1}º</td>
-                    <td style="padding: 5px; border-right: 1px solid #ccc;">${new Date(p.data).toLocaleDateString('pt-BR')}</td>
-                    <td style="padding: 5px; font-weight: bold;">R$ ${parseFloat(p.valor).toFixed(2).replace('.', ',')}</td>
-                    <td style="padding: 5px; text-align: center;">
-                        ${p.pago 
-                            ? '<span style="color: #2e7d32; font-weight: bold; font-size: 10px;">✅ PAGO</span>' 
-                            : `<button onclick="baixarParcela('${p.id}', '${numOS}')" style="background: #fff3e0; border: 1px solid #ff9800; border-radius: 3px; cursor: pointer; font-size: 9px; padding: 2px 5px;">🔔 PAGAR</button>`
-                        }
-                        <button onclick="excluirParcela('${p.id}', '${numOS}')" style="background:none; border:none; cursor:pointer; margin-left: 5px;">❌</button>
-                    </td>
-                `;
-                corpo.appendChild(tr);
+    // RELATÓRIO MEI ANUAL
+    async function abrirRelatorioMEI() {
+        try {
+            const anoAtual = new Date().getFullYear();
+            const { data, error } = await _supabase
+                .from('tabela_pedidos')
+                .select('num_os, data_os, vlr_total, nome_cliente')
+                .gte('data_os', `${anoAtual}-01-01`)
+                .lte('data_os', `${anoAtual}-12-31`)
+                .order('data_os', { ascending: true });
+
+            if (error) throw error;
+
+            let totalFaturado = 0, quantidade = 0;
+            data.forEach(item => {
+                const valor = parseFloat(item.vlr_total) || 0;
+                if (valor > 0) { totalFaturado += valor; quantidade++; }
             });
-            document.getElementById('res_falta_video').innerText = "LANÇADO";
-        } else {
-            // Se não tiver nada lançado, limpa a tabela e mostra 0,00
-            corpo.innerHTML = "";
-            document.getElementById('res_falta_video').innerText = "0,00";
+
+            const ticketMedio = quantidade > 0 ? (totalFaturado / quantidade) : 0;
+            const limiteMEI = 81000;
+
+            const janelaImpressao = window.open('', '', 'width=900,height=700');
+            janelaImpressao.document.write(`
+                <html>
+                <head>
+                    <title>Relatório MEI - Ótica AHV Store</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; padding: 20px; color: #333; }
+                        .header { text-align: center; border-bottom: 2px solid #1a237e; padding-bottom: 10px; margin-bottom: 20px; }
+                        table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 12px; }
+                        th, td { border: 1px solid #ccc; padding: 8px; text-align: left; }
+                        th { background-color: #f2f2f2; }
+                        .resumo { margin-top: 20px; padding: 15px; border: 1px solid #1a237e; background: #f0f3ff; rounded: 8px; }
+                        @media print { .no-print { display: none; } }
+                    </style>
+                </head>
+                <body>
+                    <div class="header">
+                        <h2>ÓTICA AHV STORE</h2>
+                        <h3>Relatório Anual de Faturamento MEI - Ano Base ${anoAtual}</h3>
+                    </div>
+                    <table>
+                        <thead><tr><th>Data</th><th>Nº OS</th><th>Cliente</th><th>Valor (R$)</th></tr></thead>
+                        <tbody>
+                            ${data.map(v => `
+                                <tr>
+                                    <td>${new Date(v.data_os).toLocaleDateString('pt-BR')}</td>
+                                    <td>${v.num_os || '---'}</td>
+                                    <td>${v.nome_cliente || 'N/I'}</td>
+                                    <td>R$ ${parseFloat(v.vlr_total).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                    <div class="resumo">
+                        <p><strong>Faturamento Bruto no Ano:</strong> R$ ${totalFaturado.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        <p><strong>Total de Ordens de Serviço:</strong> ${quantidade}</p>
+                        <p><strong>Ticket Médio por Venda:</strong> R$ ${ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        <hr>
+                        <p><strong>Limite Anual MEI:</strong> R$ ${limiteMEI.toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                        <p><strong>Teto Restante para Faturamento:</strong> R$ ${(limiteMEI - totalFaturado).toLocaleString('pt-BR', {minimumFractionDigits: 2})}</p>
+                    </div>
+                    <div style="text-align:center; margin-top:20px;">
+                        <button class="no-print" onclick="window.print()" style="padding: 10px 20px; cursor: pointer; background: #1a237e; color: white; border: none; font-weight: bold; border-radius: 5px;">Imprimir Documento</button>
+                    </div>
+                </body>
+                </html>
+            `);
+            janelaImpressao.document.close();
+        } catch (err) {
+            alert("Erro ao gerar relatório MEI: " + err.message);
         }
     }
-}
 
-
-function gerarParcelasVideo() {
-    const valorBase = parseFloat(document.getElementById('fin_valor').value) || 0;
-    const taxa = parseFloat(document.getElementById('fin_taxa').value) || 0;
-    const qtde = parseInt(document.getElementById('fin_qtde').value) || 1;
-    const intervalo = parseInt(document.getElementById('fin_intervalo').value) || 30;
-    const dataInicial = document.getElementById('fin_data').value;
-    const corpo = document.getElementById('corpo_parcelas_video');
-
-    if (!valorBase || !dataInicial) { 
-        alert("Preencha o Valor e a Data de Vencimento!"); 
-        return; 
+    // HELPERS E MÁSCARAS
+    function preencherSeletores() {
+        const fmt = (n) => (n > 0 ? "+" : "") + n.toFixed(2).replace('.', ',');
+        document.querySelectorAll('.sel-esf').forEach(s => { 
+            s.innerHTML = ""; s.add(new Option("", "")); 
+            for (let i = 8; i >= -12; i -= 0.25) s.add(new Option(i === 0 ? "0,00" : fmt(i), i.toFixed(2))); 
+        });
+        document.querySelectorAll('.sel-cil').forEach(s => { 
+            s.innerHTML = ""; s.add(new Option("", "")); 
+            for (let i = 0; i >= -6; i -= 0.25) s.add(new Option(i.toFixed(2).replace('.', ','), i.toFixed(2))); 
+        });
+        document.querySelectorAll('.sel-eixo').forEach(s => { 
+            s.innerHTML = ""; s.add(new Option("", "")); 
+            for (let i = 0; i <= 180; i++) s.add(new Option(i + "°", i)); 
+        });
+        document.querySelectorAll('.sel-add').forEach(s => { 
+            s.innerHTML = ""; s.add(new Option("", "")); 
+            for (let i = 0; i <= 3.5; i += 0.25) s.add(new Option(fmt(i), i.toFixed(2))); 
+        });
     }
 
-    const valorComTaxa = valorBase + (valorBase * (taxa / 100));
-    corpo.innerHTML = ""; 
-    const valorParcela = (valorComTaxa / qtde).toFixed(2);
+    function atualizarTudo() {
+        ['od', 'oe'].forEach(l => {
+            const esfL = parseFloat(document.getElementById(`e_${l}_l`).value) || 0;
+            const add = parseFloat(document.getElementById(`add_${l}`).value) || 0;
+            const dnpL = parseFloat(document.getElementById(`dnp_${l}_l`).value) || 0;
+            const altL = document.getElementById(`alt_${l}_l`).value;
 
-    for (let i = 0; i < qtde; i++) {
-        let d = new Date(dataInicial + 'T00:00:00');
-        d.setDate(d.getDate() + (i * intervalo));
-
-        const tr = document.createElement('tr');
-        tr.style.borderBottom = "1px solid #eee";
-        tr.innerHTML = `
-            <td style="padding: 5px; border-right: 1px solid #ccc;">${i + 1}º</td>
-            <td style="padding: 5px; border-right: 1px solid #ccc;">${d.toLocaleDateString('pt-BR')}</td>
-            <td style="padding: 5px; font-weight: bold;">R$ ${valorParcela.replace('.', ',')}</td>
-        `;
-        corpo.appendChild(tr);
-    }
-    // ESTA LINHA LIMPA O VALOR FRACIONADO NO RODAPÉ:
-    document.getElementById('res_falta_video').innerText = valorComTaxa.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-async function excluirParcela(id, numOS) {
-    if (!confirm("Deseja apagar esta parcela do financeiro?")) return;
-
-    const { error } = await _supabase
-        .from('financeiro')
-        .delete()
-        .eq('id', id);
-
-    if (error) {
-        alert("Erro ao excluir: " + error.message);
-    } else {
-        alert("Parcela excluída com sucesso!");
-        // Recarrega a lista para mostrar que sumiu
-        puxarDadosPedido(numOS);
-    }
-}
-
-async function baixarParcela(id, numOS) {
-    if (!confirm("Confirmar recebimento desta parcela?")) return;
-
-    const { error } = await _supabase
-        .from('financeiro')
-        .update({ pago: true }) // Muda o status para pago
-        .eq('id', id);
-
-    if (error) {
-        alert("Erro ao processar: " + error.message);
-    } else {
-        alert("Pagamento registrado!");
-        puxarDadosPedido(numOS); // Atualiza a tela
-    }
-}
-
-async function salvarTudoNoBanco() {
-    // 1. Pega os valores
-    const valorBase = parseFloat(document.getElementById('fin_valor').value);
-    const taxa = parseFloat(document.getElementById('fin_taxa').value) || 0;
-    const qtde = parseInt(document.getElementById('fin_qtde').value) || 1;
-    const intervalo = parseInt(document.getElementById('fin_intervalo').value) || 30;
-    const dataInicial = document.getElementById('fin_data').value;
-    const tipo = document.getElementById('fin_tipo_pag').value;
-    const desc = document.getElementById('fin_desc').value;
-
-    if (!valorBase || !dataInicial) {
-        alert("Preencha Valor e Data antes de confirmar!");
-        return;
-    }
-
-    // 2. Cálculo do valor
-    const valorComTaxa = valorBase + (valorBase * (taxa / 100));
-    const valorParcela = (valorComTaxa / qtde).toFixed(2);
-
-    // --- LOGICA DE EDIÇÃO ---
-    if (idEdicao) {
-        // Se idEdicao existe, atualizamos apenas este registro específico
-        const { error } = await _supabase
-            .from('financeiro')
-            .update({
-                valor: parseFloat(valorParcela),
-                descricao: desc,
-                tipo: tipo,
-                data: new Date(dataInicial + 'T00:00:00').toISOString()
-            })
-            .eq('id', idEdicao);
-
-        if (error) {
-            alert("Erro ao atualizar o registro.");
-            return;
-        }
-        alert("✅ Registro atualizado com sucesso!");
-        idEdicao = null; // Reseta a variável de edição
-        document.querySelector("button[onclick='salvarTudoNoBanco()']").innerText = "CONFIRMAR";
-    } 
-    // --- MODO LANÇAMENTO NORMAL (PARCELAS) ---
-    else {
-        for (let i = 0; i < qtde; i++) {
-            let d = new Date(dataInicial + 'T00:00:00');
-            d.setDate(d.getDate() + (i * intervalo));
-
-            const { error } = await _supabase.from('financeiro').insert([{
-                valor: parseFloat(valorParcela),
-                descricao: qtde > 1 ? `${desc} (${i + 1}/${qtde})` : desc,
-                tipo: tipo,
-                data: d.toISOString(),
-                pago: false 
-            }]);
-
-            if (error) {
-                alert("Erro ao salvar parcela " + (i + 1));
-                return;
+            if(document.getElementById(`e_${l}_l`).value || document.getElementById(`add_${l}`).value) {
+                const totalPerto = esfL + add;
+                document.getElementById(`e_${l}_p`).value = totalPerto === 0 ? "Plano" : (totalPerto > 0 ? "+" : "") + totalPerto.toFixed(2).replace('.', ',');
             }
-        }
-        alert("✅ Financeiro lançado com sucesso!");
+            const cilSelect = document.getElementById(`c_${l}_l`);
+            const cilTexto = cilSelect.options[cilSelect.selectedIndex]?.text || "";
+            document.getElementById(`c_${l}_p`).value = cilTexto;
+            document.getElementById(`x_${l}_p`).value = document.getElementById(`x_${l}_l`).value ? document.getElementById(`x_${l}_l`).value + "°" : "";
+            document.getElementById(`dnp_${l}_p`).value = dnpL ? (dnpL - 2.5).toFixed(1).replace('.', ',') : "";
+            document.getElementById(`alt_${l}_p`).value = altL;
+        });
     }
 
-    // 4. Limpa os campos
-    document.getElementById('corpo_parcelas_video').innerHTML = ""; 
-    document.getElementById('fin_valor').value = "";
-    document.getElementById('fin_taxa').value = "0"; 
-    document.getElementById('fin_desc').value = "";
-    document.getElementById('fin_data').value = "";
-    document.getElementById('res_falta_video').innerText = "0,00";
-    document.getElementById('fin_qtde').value = "1"; // Reseta a quantidade
+    function calcularDiametro() {
+        const p = parseFloat(document.getElementById('m_ponte').value) || 0;
+        const ah = parseFloat(document.getElementById('m_aro_h').value) || 0;
+        const am = parseFloat(document.getElementById('m_aro_m').value) || 0;
+        const dnpOD = parseFloat(document.getElementById('dnp_od_l').value) || 0;
+        const dnpOE = parseFloat(document.getElementById('dnp_oe_l').value) || 0;
+        const dnpMaior = Math.max(dnpOD, dnpOE);
 
-    // 5. Atualiza a lista visual
-    atualizarResumoMensal(); // Adicione esta linha para atualizar a tabela de movimento
-}
+        if (p > 0 && ah > 0 && am > 0 && dnpMaior > 0) {
+            const resultado = Math.ceil((p + ah) - (dnpMaior * 2) + am + 2);
+            document.getElementById('m_diametro').value = "Ø " + resultado + " mm";
+        } else {
+            document.getElementById('m_diametro').value = "";
+        }
+    }
 
-async function buscarCEP(valor) {
-    // Remove qualquer traço ou ponto para deixar só números
-    const cep = valor.replace(/\D/g, '');
+    async function filtrarLentes(lado) {
+        const tipoSelecionado = document.getElementById(`tipo_lente_${lado}`).value;
+        const seletorNomes = document.getElementById(`nome_lente_${lado}`);
+        seletorNomes.innerHTML = '<option value="">Carregando...</option>';
 
-    // Só busca se o CEP tiver os 8 dígitos corretos
-    if (cep.length !== 8) return;
-
-    try {
-        const response = await fetch(`https://viacep.com.br/ws/${cep}/json/`);
-        const data = await response.json();
-
-        if (data.erro) {
-            alert("CEP não encontrado.");
+        if (!tipoSelecionado) {
+            seletorNomes.innerHTML = '<option value=""></option>';
             return;
         }
 
-        // Preenche os seus campos originais automaticamente
-        document.getElementById('rua_cliente').value = data.logradouro;
-        document.getElementById('bairro_cliente').value = data.bairro;
-        document.getElementById('cid_cliente').value = data.localidade;
-        document.getElementById('uf_cliente').value = data.uf;
-        
-        // Pula o foco direto para o campo de Número para você ganhar tempo
-        if(document.getElementById('num_end_cliente')) {
-            document.getElementById('num_end_cliente').focus();
-        }
-
-    } catch (error) {
-        console.error("Erro ao buscar o endereço:", error);
-    }
-}
-
-function mascaraCPF(i) {
-    let v = i.value.replace(/\D/g, ""); // Remove tudo que não é número
-    
-    // Coloca a pontuação: 000.000.000-00
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d)/, "$1.$2");
-    v = v.replace(/(\d{3})(\d{1,2})$/, "$1-$2");
-    
-    i.value = v;
-}
-
-function mascaraTel(i) {
-    let v = i.value.replace(/\D/g, ""); // Remove tudo que não é número
-    
-    // Formata como (00) 00000-0000
-    v = v.replace(/^(\d{2})(\d)/g, "($1) $2");
-    v = v.replace(/(\d{5})(\d)/, "$1-$2");
-    
-    i.value = v;
-}
-
-function limparCamposRapido() {
-    console.log("Iniciando limpeza total...");
-
-    // 1. Limpa todos os Inputs, Selects e Textareas
-    document.querySelectorAll('input, select, textarea').forEach(el => {
-        // Não limpa o login para você não ser deslogado
-        if (!['user_login', 'pass_login'].includes(el.id)) {
-            el.value = "";
-        }
-    });
-
-    // 2. Reseta as Datas para o dia de hoje
-    const hoje = new Date().toISOString().split('T')[0];
-    if (document.getElementById('data_os')) document.getElementById('data_os').value = hoje;
-    if (document.getElementById('fin_data')) document.getElementById('fin_data').value = hoje;
-
-    // 3. Zera os valores financeiros na tela
-    const camposZero = ['vlr_lentes', 'vlr_total', 'vlr_armacao', 'vlr_desconto', 'fin_valor', 'fin_taxa'];
-    camposZero.forEach(id => {
-        const campo = document.getElementById(id);
-        if (campo) campo.value = (id === 'fin_taxa') ? "0" : "0.00";
-    });
-
-    // 4. Limpa a tabela visual do Financeiro (as parcelas que ficam embaixo)
-    const corpoFin = document.getElementById('corpo_parcelas_video');
-    if (corpoFin) corpoFin.innerHTML = "";
-    
-    const faltaFin = document.getElementById('res_falta_video');
-    if (faltaFin) faltaFin.innerText = "0,00";
-
-    // 5. Limpa campos de visualização (como o Ø Sugerido)
-    if (document.getElementById('m_diametro')) document.getElementById('m_diametro').value = "";
-
-    // 6. Reseta o estado do sistema
-    editandoPedido = false;
-    
-    // Força o Select de busca a voltar para o topo (vazio)
-    if (document.getElementById('select_busca')) document.getElementById('select_busca').value = "";
-
-    console.log("Sistema limpo e pronto para novo uso.");
-}
-
-function enviarWhatsApp() {
-    try {
-        // Pega os dados usando os IDs REAIS do seu sistema
-        const nome = document.getElementById('nome_cliente').value || "Cliente";
-        const total = document.getElementById('vlr_total').value || "0,00";
-        let fone = document.getElementById('tel_cliente').value || "";
-        
-        // Limpa o telefone (tira parênteses e traços)
-        fone = fone.replace(/\D/g, '');
-        
-        // Adiciona o código do Brasil (55) se não tiver
-        if (fone.length > 0 && !fone.startsWith('55')) {
-            fone = '55' + fone;
-        }
-
-        // Se não tiver telefone, avisa o usuário
-        if (fone === "" || fone === "55") {
-            alert("Por favor, preencha o telefone do cliente.");
+        const { data, error } = await _supabase.from('tabela_lentes').select('nome').eq('tipo', tipoSelecionado).order('nome', { ascending: true });
+        if (error || !data) {
+            seletorNomes.innerHTML = '<option value="">Erro ao carregar</option>';
             return;
         }
 
-        // Monta a mensagem bonitinha
-        const msg = `Olá *${nome}*! Segue o orçamento da *Ótica AHV Store* no valor de *R$ ${total}*.`;
-        
-        // Cria o link que o WhatsApp entende
-        const link = `https://wa.me/${fone}?text=${encodeURIComponent(msg)}`;
-        
-        // Abre o WhatsApp (No computador abre o Web, no Tablet abrirá o App)
-        window.location.href = link;
-
-    } catch (e) {
-        alert("Erro ao preparar mensagem. Verifique se os dados do cliente foram preenchidos.");
-    }
-}
-
-
-function alternarLista() {
-    const ent = document.getElementById('area_entradas');
-    const sai = document.getElementById('area_saidas');
-    
-    // Se a primeira estiver escondida, mostra as duas. Se não, esconde as duas.
-    const novoEstado = ent.style.display === 'none' ? 'block' : 'none';
-    
-    ent.style.display = novoEstado;
-    sai.style.display = novoEstado;
-    
-}
-
-function prepararEdicao(id, valor, tipo, data, descricao) {
-    idEdicao = id; // Lembra do idEdicao que criamos no topo do script?
-
-    document.getElementById('fin_valor').value = valor;
-    document.getElementById('fin_tipo_pag').value = tipo;
-    document.getElementById('fin_data').value = data;
-    document.getElementById('fin_desc').value = descricao;
-
-    // Muda o botão de confirmar para atualizar
-    const btnConfirmar = document.querySelector("button[onclick='salvarTudoNoBanco()']");
-    btnConfirmar.innerText = "ATUALIZAR REGISTRO";
-    btnConfirmar.style.background = "#1a237e";
-
-    // Rola a página para cima para facilitar a edição
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-
-function calcularPrevisao() {
-    const dataPedido = document.getElementById('data_os').value;
-    const dias = parseInt(document.getElementById('dias_prazo').value) || 0;
-
-    if (!dataPedido) return;
-
-    const data = new Date(dataPedido);
-    data.setDate(data.getDate() + dias);
-
-    const formatada = data.toISOString().split('T')[0];
-    document.getElementById('data_previsao').value = formatada;
-}
-
-function verificarAtraso() {
-    const previsao = document.getElementById('data_previsao').value;
-    const status = document.getElementById('status_pedido').value;
-
-    if (!previsao) return;
-
-    const hoje = new Date();
-    const dataPrev = new Date(previsao);
-
-    const campo = document.getElementById('data_previsao');
-
-    if (status !== "Entregue" && dataPrev < hoje) {
-        campo.style.backgroundColor = "#ffcccc"; // ATRASADO
-    } else {
-        campo.style.backgroundColor = "#ccffcc"; // OK
-    }
-}
-
-function atualizarStatusAutomatico() {
-    const status = document.getElementById('status_pedido');
-    const total = parseFloat(document.getElementById('vlr_total').value) || 0;
-
-    if (!status) return;
-
-    // Se ainda estiver como "Aguardando" e já tem valor
-    if (status.value === "Aguardando" && total > 0) {
-        status.value = "Produção";
-    }
-}
-
-function enviarWhatsAppStatus() {
-    const nome = document.getElementById('nome_cliente').value || "Cliente";
-    const os = document.getElementById('num_os').value || "---";
-    const valor = document.getElementById('vlr_total').value || "0,00";
-    const data = document.getElementById('data_os').value;
-
-    let telefone = document.getElementById('tel_cliente').value;
-
-    if (!telefone) {
-        alert("Telefone do cliente não preenchido!");
-        return;
+        seletorNomes.innerHTML = '<option value=""></option>';
+        data.forEach(item => seletorNomes.add(new Option(item.nome, item.nome)));
     }
 
-    // Limpar telefone
-    telefone = telefone.replace(/\D/g, '');
+    function alternarForm(idDesejado) {
+        document.querySelectorAll('.form-estoque').forEach(f => f.classList.add('hidden'));
+        document.getElementById(idDesejado).classList.remove('hidden');
 
-    if (!telefone.startsWith("55")) {
-        telefone = "55" + telefone;
+        document.querySelectorAll('.subtab-btn').forEach(b => {
+            b.classList.remove('active');
+            b.classList.add('text-slate-400');
+        });
+
+        const subAbaActive = document.getElementById('subtab-' + idDesejado.replace('form-', ''));
+        if (subAbaActive) {
+            subAbaActive.classList.add('active');
+            subAbaActive.classList.remove('text-slate-400');
+        }
     }
 
-    // Formatando data BR
-    let dataFormatada = "";
-    if (data) {
-        const d = new Date(data);
-        dataFormatada = d.toLocaleDateString('pt-BR');
+    function limparCampos(idForm) {
+        document.querySelectorAll(`#${idForm} input, #${idForm} select`).forEach(el => el.value = "");
     }
 
-    const mensagem = 
-`Olá ${nome}
-
-Seu óculos já está *PRONTO*!
-
-*OS:* ${os}
-*Valor:* R$ ${valor}
-*Data:* ${dataFormatada}
-
-Em breve estaremos lhe entregando!
-A Ótica AHV Store agradece a sua preferência.`;
-
-    const url = `https://wa.me/${telefone}?text=${encodeURIComponent(mensagem)}`;
-
-    window.open(url, '_blank');
-}
-
-function verificarMudancaStatus() {
-    const statusAtual = document.getElementById('status_pedido').value;
-
-    // Se mudou para "Pronto"
-    if (statusAtual === "Pronto" && statusAnterior !== "Pronto") {
-        enviarWhatsAppStatus();
+    function limparCamposRapido() {
+        document.querySelectorAll('input, select, textarea').forEach(el => {
+            if (!['user_login', 'pass_login'].includes(el.id)) el.value = "";
+        });
+        document.getElementById('data_os').value = new Date().toISOString().split('T')[0];
     }
 
-    statusAnterior = statusAtual;
+    function novoPedido() {
+        if (confirm("Deseja limpar todos os campos para iniciar um novo pedido?")) {
+            limparCamposRapido();
+            editandoPedido = false;
+        }
+    }
 
-    verificarAtraso(); // mantém sua lógica de atraso
-}
+    function imprimirGeral() { window.print(); }
+    function imprimirLaboratorio() {
+        document.body.classList.add('modo-lab');
+        window.print();
+        document.body.classList.remove('modo-lab');
+    }
 
+    // VALIDAÇÃO DE SALDO E ATUALIZAÇÃO DE STATUS
+    async function atualizarStatusPedido(numOS, novoStatus) {
+        if (!_supabase) return alert("Erro de Conexão Supabase.");
+
+        try {
+            if (novoStatus === 'Entregue') {
+                const { data: pedido, error: errConsulta } = await _supabase
+                    .from('tabela_pedidos')
+                    .select('saldo_restante')
+                    .eq('num_os', numOS)
+                    .single();
+
+                if (errConsulta) throw new Error("Erro ao consultar O.S.: " + errConsulta.message);
+
+                const saldoRestante = parseFloat(pedido?.saldo_restante || 0);
+
+                if (saldoRestante > 0) {
+                    const valorFormatado = saldoRestante.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+                    alert(`BLOQUEADO: Não é possível marcar como Entregue. Esta O.S. possui um saldo pendente de R$ ${valorFormatado}. Registre a quitação no Caixa.`);
+                    
+                    const selectStatus = document.getElementById('status_pedido');
+                    if (selectStatus) selectStatus.value = 'Pronto';
+                    return;
+                }
+            }
+
+            const { error: errUpdate } = await _supabase
+                .from('tabela_pedidos')
+                .update({ status_pedido: novoStatus })
+                .eq('num_os', numOS);
+
+            if (errUpdate) throw new Error("Erro ao atualizar status: " + errUpdate.message);
+
+            alert(`Status da O.S. Nº ${numOS} atualizado para "${novoStatus}"!`);
+
+        } catch (err) {
+            console.error("Erro na atualização de status:", err);
+            alert(err.message);
+        }
+    }
+
+    async function carregarIndicadoresDashboard() {
+        if (!_supabase) return;
+
+        try {
+            const { data, error } = await _supabase
+                .from('vw_dashboard_kpis')
+                .select('*')
+                .single();
+
+            if (error) throw error;
+
+            const vendasMes = parseFloat(data?.vendas_mes || 0);
+            const recebidoMes = parseFloat(data?.recebido_mes || 0);
+            const aReceberTotal = parseFloat(data?.a_receber_total || 0);
+
+            const elVendas = document.getElementById('pdv_kpi_vendas');
+            const elRecebido = document.getElementById('pdv_kpi_recebido');
+            const elReceber = document.getElementById('pdv_kpi_receber');
+
+            if (elVendas) elVendas.innerText = 'R$ ' + vendasMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (elRecebido) elRecebido.innerText = 'R$ ' + recebidoMes.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+            if (elReceber) elReceber.innerText = 'R$ ' + aReceberTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 });
+
+        } catch (err) {
+            console.error("Erro ao carregar KPIs da View:", err.message);
+        }
+    }
+
+    window.onload = function() { 
+        preencherSeletores(); 
+        if(document.getElementById('data_os')) {
+            document.getElementById('data_os').value = new Date().toISOString().split('T')[0]; 
+        }
+    };
 </script>
 </body>
 </html>
