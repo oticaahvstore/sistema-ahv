@@ -43,21 +43,31 @@
             print-color-adjust: exact !important;
         }
 
-        /* Estilização para impressão A4 e Laboratório */
+        /* Estilização otimizada para impressão A4 de 1 página sem ocultar dados */
         @media print {
-            body {
+            @page {
+                size: A4 portrait;
+                margin: 4mm;
+            }
+            html, body {
+                width: 210mm;
+                height: 297mm;
                 background: white !important;
                 padding: 0 !important;
                 margin: 0 !important;
+                font-size: 8pt !important;
+                overflow: hidden !important;
             }
-            .no-print {
+            header, nav, footer, .no-print, button {
                 display: none !important;
             }
-            #app-container {
+            section:not(#content-vendas) {
+                display: none !important;
+            }
+            #content-vendas {
                 display: block !important;
-                width: 100% !important;
-                margin: 0 !important;
                 padding: 0 !important;
+                margin: 0 !important;
             }
             .print-page {
                 box-shadow: none !important;
@@ -68,13 +78,16 @@
             }
             body.modo-lab .sensivel,
             body.modo-lab .financeiro-section {
-                display: none !important;
+                display: block !important;
             }
             input, select, textarea {
                 border: 1px solid #333 !important;
                 background: white !important;
                 color: black !important;
                 appearance: none !important;
+                font-size: 8pt !important;
+                padding: 1px 3px !important;
+                height: auto !important;
             }
         }
 
@@ -173,7 +186,6 @@
 
     <!-- ABA 1: DASHBOARD PDV -->
     <section id="content-dashboard" class="space-y-6">
-        <!-- BARRA SUPERIOR DE AÇÕES RÁPIDAS DA DASHBOARD -->
         <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-wrap items-center justify-between gap-4">
             <div>
                 <h2 class="text-xl font-black text-slate-800">Visão Geral da Ótica</h2>
@@ -189,7 +201,6 @@
             </div>
         </div>
 
-        <!-- CARDS DE KPIS -->
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-2 h-full bg-brand-800"></div>
@@ -197,28 +208,24 @@
                 <div class="text-xl font-black text-brand-800 mt-1" id="pdv_kpi_vendas">R$ 0,00</div>
                 <div class="text-[10px] text-slate-500 mt-1 font-medium" id="pdv_kpi_vendas_qtd">0 pedidos registrados</div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-2 h-full bg-emerald-600"></div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Recebido Caixa</span>
                 <div class="text-xl font-black text-emerald-600 mt-1" id="pdv_kpi_recebido">R$ 0,00</div>
                 <div class="text-[10px] text-slate-500 mt-1 font-medium">Lançamentos quitados</div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-2 h-full bg-amber-500"></div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">A Receber</span>
                 <div class="text-xl font-black text-amber-600 mt-1" id="pdv_kpi_receber">R$ 0,00</div>
                 <div class="text-[10px] text-slate-500 mt-1 font-medium">Saldos de O.S. pendentes</div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-2 h-full bg-blue-600"></div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Estoque Armações</span>
                 <div class="text-xl font-black text-slate-800 mt-1" id="pdv_kpi_estoque">0</div>
                 <div class="text-[10px] text-slate-500 mt-1 font-medium" id="pdv_kpi_estoque_desc">Itens disponíveis</div>
             </div>
-
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm relative overflow-hidden">
                 <div class="absolute top-0 right-0 w-2 h-full bg-purple-600"></div>
                 <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Em Produção</span>
@@ -227,160 +234,95 @@
             </div>
         </div>
 
-        <!-- GRÁFICOS DE DESEMPENHO -->
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div class="lg:col-span-2 bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 class="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-chart-column text-brand-800"></i> Faturamento Semestral (R$)
                 </h3>
-                <div class="h-64 relative">
-                    <canvas id="pdv_chart_vendas"></canvas>
-                </div>
+                <div class="h-64 relative"><canvas id="pdv_chart_vendas"></canvas></div>
             </div>
-
             <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
                 <h3 class="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
                     <i class="fa-solid fa-chart-pie text-brand-800"></i> Distribuição por Status
                 </h3>
-                <div class="h-64 relative">
-                    <canvas id="pdv_chart_status"></canvas>
-                </div>
-            </div>
-        </div>
-
-        <!-- RESUMO FINANCEIRO E ALERTAS -->
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-                <h3 class="text-sm font-extrabold text-slate-800 flex items-center gap-2">
-                    <i class="fa-solid fa-wallet text-brand-800"></i> Resumo Financeiro Geral
-                </h3>
-                <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Entradas</span>
-                        <strong class="text-sm font-black text-emerald-600 block mt-1" id="pdv_fin_entradas">R$ 0,00</strong>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Saídas</span>
-                        <strong class="text-sm font-black text-rose-600 block mt-1" id="pdv_fin_saidas">R$ 0,00</strong>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Saldo Operacional</span>
-                        <strong class="text-sm font-black text-brand-800 block mt-1" id="pdv_fin_saldo">R$ 0,00</strong>
-                    </div>
-                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                        <span class="text-[10px] text-slate-500 font-bold block uppercase">Ticket Médio</span>
-                        <strong class="text-sm font-black text-indigo-600 block mt-1" id="pdv_ticket">R$ 0,00</strong>
-                    </div>
-                </div>
-            </div>
-
-            <div class="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm">
-                <h3 class="text-sm font-extrabold text-slate-800 mb-3 flex items-center gap-2">
-                    <i class="fa-solid fa-triangle-exclamation text-amber-500"></i> Alertas Operacionais
-                </h3>
-                <div id="pdv_alertas" class="space-y-2">
-                    <div class="text-xs text-slate-500 text-center py-6">Carregando alertas do sistema...</div>
-                </div>
-            </div>
-        </div>
-
-        <!-- TABELA ÚLTIMAS VENDAS -->
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-5">
-            <h3 class="text-sm font-extrabold text-slate-800 mb-4 flex items-center gap-2">
-                <i class="fa-solid fa-clock-rotate-left text-brand-800"></i> Últimas Ordens de Serviço (O.S.)
-            </h3>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left border-collapse text-xs">
-                    <thead>
-                        <tr class="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px]">
-                            <th class="p-3">Nº O.S.</th>
-                            <th class="p-3">Cliente</th>
-                            <th class="p-3">Data OS</th>
-                            <th class="p-3">Status</th>
-                            <th class="p-3 text-right">Total</th>
-                        </tr>
-                    </thead>
-                    <tbody id="pdv_ultimas_vendas" class="divide-y divide-slate-100">
-                        <tr><td colspan="5" class="p-4 text-center text-slate-400">Carregando últimas vendas...</td></tr>
-                    </tbody>
-                </table>
+                <div class="h-64 relative"><canvas id="pdv_chart_status"></canvas></div>
             </div>
         </div>
     </section>
 
     <!-- ABA 2: NOVA VENDA / ORDEM DE SERVIÇO (O.S.) -->
     <section id="content-vendas" class="hidden space-y-4">
-        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-6 space-y-6 print-page">
+        <div class="bg-white rounded-2xl border border-slate-200 shadow-lg p-5 space-y-3 print-page">
 
-            <!-- CABEÇALHO DA O.S. (IMPRESSÃO E TELA) -->
-            <div class="flex justify-between items-start border-b-2 border-brand-800 pb-4">
+            <!-- CABEÇALHO DA O.S. -->
+            <div class="flex justify-between items-start border-b-2 border-brand-800 pb-2">
                 <div class="flex items-center gap-3">
-                    <img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Logo Ótica" class="h-16 object-contain">
+                    <img src="https://i.ibb.co/S4YhcWKG/Logo.png" alt="Logo Ótica" class="h-12 object-contain">
                     <div>
-                        <h2 class="font-black text-lg text-brand-800">ÓTICA AHV STORE</h2>
-                        <span class="text-xs text-slate-500 font-medium block">Excelência Visual & Precisão Técnica</span>
+                        <h2 class="font-black text-sm text-brand-800">ÓTICA AHV STORE</h2>
+                        <span class="text-[10px] text-slate-500 font-medium block">Excelência Visual & Precisão Técnica</span>
                     </div>
                 </div>
-                <div class="text-right text-[11px] leading-tight text-slate-600">
-                    <strong class="text-slate-900 block text-xs">CNPJ: 58.938.512/0001-83</strong>
+                <div class="text-right text-[9px] leading-tight text-slate-600">
+                    <strong class="text-slate-900 block text-[10px]">CNPJ: 58.938.512/0001-83</strong>
                     <span>WhatsApp: (11) 94854-5043 / (11) 96438-0652</span><br>
                     <span>Atendimento Especializado em Lentes e Armações</span>
                 </div>
             </div>
 
             <!-- DADOS DO CLIENTE -->
-            <div class="space-y-3">
-                <div class="bg-brand-800 text-white px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider flex items-center justify-between">
+            <div class="space-y-1.5">
+                <div class="bg-brand-800 text-white px-2.5 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider flex items-center justify-between">
                     <span><i class="fa-solid fa-user-tag mr-1"></i> Dados do Cliente & O.S.</span>
-                    <span class="text-[10px] font-normal opacity-80">Preenchimento Obrigatório</span>
+                    <span class="text-[8px] font-normal opacity-80">Preenchimento Obrigatório</span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-1.5">
                     <div class="lg:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Data Emissão</label>
-                        <input type="date" id="data_os" class="w-full h-8 border border-slate-300 rounded px-2 text-xs bg-slate-50">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Data Emissão</label>
+                        <input type="date" id="data_os" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px] bg-slate-50">
                     </div>
                     <div class="lg:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">O.S. Nº</label>
-                        <input type="text" id="num_os" placeholder="Ex: 1050" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-black text-red-600 bg-slate-50">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">O.S. Nº</label>
+                        <input type="text" id="num_os" placeholder="" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px] font-black text-red-600 bg-slate-50">
                     </div>
                     <div class="lg:col-span-4">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Nome Completo</label>
-                        <input type="text" id="nome_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Nome Completo</label>
+                        <input type="text" id="nome_cliente" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                     <div class="lg:col-span-2 sensivel">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">CPF</label>
-                        <input type="text" id="cpf_cliente" placeholder="000.000.000-00" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">CPF</label>
+                        <input type="text" id="cpf_cliente" placeholder="" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                     <div class="lg:col-span-2 sensivel">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Telefone / Whats</label>
-                        <input type="text" id="tel_cliente" placeholder="(11) 90000-0000" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Telefone / Whats</label>
+                        <input type="text" id="tel_cliente" placeholder="" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3 sensivel">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-1.5 sensivel">
                     <div class="lg:col-span-5">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Endereço</label>
-                        <input type="text" id="rua_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Endereço</label>
+                        <input type="text" id="rua_cliente" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                     <div class="lg:col-span-1">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Nº</label>
-                        <input type="text" id="num_end_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Nº</label>
+                        <input type="text" id="num_end_cliente" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                     <div class="lg:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Bairro</label>
-                        <input type="text" id="bairro_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Bairro</label>
+                        <input type="text" id="bairro_cliente" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                     <div class="lg:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">CEP</label>
-                        <input type="text" id="cep_cliente" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">CEP</label>
+                        <input type="text" id="cep_cliente" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 gap-1.5">
                     <div class="sm:col-span-1">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Status do Pedido</label>
-                        <select id="status_pedido" onchange="atualizarStatusPedido(document.getElementById('num_os').value, this.value)" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold text-brand-800 bg-slate-50">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Status do Pedido</label>
+                        <select id="status_pedido" onchange="atualizarStatusPedido(document.getElementById('num_os').value, this.value)" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px] font-bold text-brand-800 bg-slate-50">
                             <option value="Orçamento">Orçamento</option>
                             <option value="Aguardando">Aguardando</option>
                             <option value="Garantia">Garantia</option>    
@@ -390,210 +332,210 @@
                         </select>
                     </div>
                     <div class="sm:col-span-1">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Previsão Entrega</label>
-                        <input type="date" id="data_previsao" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Previsão Entrega</label>
+                        <input type="date" id="data_previsao" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                     <div class="sm:col-span-1">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Dias Prazo</label>
-                        <input type="number" id="dias_prazo" value="3" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Dias Prazo</label>
+                        <input type="number" id="dias_prazo" value="3" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                     </div>
                 </div>
             </div>
 
             <!-- PRESCRIÇÃO LONGE -->
-            <div class="space-y-2">
-                <div class="bg-brand-800 text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+            <div class="space-y-1">
+                <div class="bg-brand-800 text-white px-2.5 py-0.5 rounded text-[10px] font-bold uppercase flex items-center justify-between">
                     <span><i class="fa-solid fa-eye mr-1"></i> Prescrição Longe</span>
                 </div>
 
                 <!-- OD LONGE -->
-                <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 flex-wrap sm:flex-nowrap">
-                    <div class="bg-brand-800 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OD</div>
-                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><select id="e_od_l" class="sel-esf w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
-                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><select id="c_od_l" class="sel-cil w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo(); filtrarLentes('od');"></select></div>
-                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><select id="x_od_l" class="sel-eixo w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
-                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Adição</label><select id="add_od" class="sel-add w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
-                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="number" step="0.5" id="dnp_od_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
-                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="number" step="0.1" id="alt_od_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
+                <div class="flex items-center gap-1 bg-slate-50 p-1 rounded border border-slate-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-brand-800 text-white font-black text-[10px] px-2 py-0.5 rounded min-w-[35px] text-center">OD</div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Esférico</label><select id="e_od_l" class="sel-esf w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Cilíndrico</label><select id="c_od_l" class="sel-cil w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo(); filtrarLentes('od');"></select></div>
+                    <div class="flex-1 min-w-[70px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Eixo</label><select id="x_od_l" class="sel-eixo w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[70px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Adição</label><select id="add_od" class="sel-add w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[60px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">DNP</label><input type="number" step="0.5" id="dnp_od_l" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1" oninput="atualizarTudo()"></div>
+                    <div class="flex-1 min-w-[60px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Altura</label><input type="number" step="0.1" id="alt_od_l" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1" oninput="atualizarTudo()"></div>
                 </div>
 
                 <!-- OE LONGE -->
-                <div class="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200 flex-wrap sm:flex-nowrap">
-                    <div class="bg-brand-800 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OE</div>
-                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><select id="e_oe_l" class="sel-esf w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
-                    <div class="flex-1 min-w-[100px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><select id="c_oe_l" class="sel-cil w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo(); filtrarLentes('oe');"></select></div>
-                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><select id="x_oe_l" class="sel-eixo w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
-                    <div class="flex-1 min-w-[90px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Adição</label><select id="add_oe" class="sel-add w-full h-7 border border-slate-300 rounded text-xs" onchange="atualizarTudo()"></select></div>
-                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="number" step="0.5" id="dnp_oe_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
-                    <div class="flex-1 min-w-[80px]"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="number" step="0.1" id="alt_oe_l" class="w-full h-7 border border-slate-300 rounded text-xs px-1" oninput="atualizarTudo()"></div>
+                <div class="flex items-center gap-1 bg-slate-50 p-1 rounded border border-slate-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-brand-800 text-white font-black text-[10px] px-2 py-0.5 rounded min-w-[35px] text-center">OE</div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Esférico</label><select id="e_oe_l" class="sel-esf w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[80px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Cilíndrico</label><select id="c_oe_l" class="sel-cil w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo(); filtrarLentes('oe');"></select></div>
+                    <div class="flex-1 min-w-[70px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Eixo</label><select id="x_oe_l" class="sel-eixo w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[70px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Adição</label><select id="add_oe" class="sel-add w-full h-5 border border-slate-300 rounded text-[10px]" onchange="atualizarTudo()"></select></div>
+                    <div class="flex-1 min-w-[60px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">DNP</label><input type="number" step="0.5" id="dnp_oe_l" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1" oninput="atualizarTudo()"></div>
+                    <div class="flex-1 min-w-[60px]"><label class="block text-[7px] font-bold text-slate-600 uppercase">Altura</label><input type="number" step="0.1" id="alt_oe_l" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1" oninput="atualizarTudo()"></div>
                 </div>
             </div>
 
             <!-- PRESCRIÇÃO PERTO -->
-            <div class="space-y-2">
-                <div class="bg-amber-600 text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+            <div class="space-y-1">
+                <div class="bg-amber-600 text-white px-2.5 py-0.5 rounded text-[10px] font-bold uppercase flex items-center justify-between">
                     <span><i class="fa-solid fa-glasses mr-1"></i> Prescrição Perto (Calculada Automaticamente)</span>
                 </div>
 
-                <div class="flex items-center gap-2 bg-amber-50/60 p-2 rounded-lg border border-amber-200 flex-wrap sm:flex-nowrap">
-                    <div class="bg-amber-600 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OD</div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><input type="text" id="e_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><input type="text" id="c_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><input type="text" id="x_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="text" id="dnp_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="text" id="alt_od_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                <div class="flex items-center gap-1 bg-amber-50/60 p-1 rounded border border-amber-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-amber-600 text-white font-black text-[10px] px-2 py-0.5 rounded min-w-[35px] text-center">OD</div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Esférico</label><input type="text" id="e_od_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Cilíndrico</label><input type="text" id="c_od_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Eixo</label><input type="text" id="x_od_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">DNP</label><input type="text" id="dnp_od_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Altura</label><input type="text" id="alt_od_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
                 </div>
 
-                <div class="flex items-center gap-2 bg-amber-50/60 p-2 rounded-lg border border-amber-200 flex-wrap sm:flex-nowrap">
-                    <div class="bg-amber-600 text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OE</div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Esférico</label><input type="text" id="e_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cilíndrico</label><input type="text" id="c_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Eixo</label><input type="text" id="x_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">DNP</label><input type="text" id="dnp_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Altura</label><input type="text" id="alt_oe_p" class="w-full h-7 border border-amber-300 rounded text-xs px-2 bg-white"></div>
+                <div class="flex items-center gap-1 bg-amber-50/60 p-1 rounded border border-amber-200 flex-wrap sm:flex-nowrap">
+                    <div class="bg-amber-600 text-white font-black text-[10px] px-2 py-0.5 rounded min-w-[35px] text-center">OE</div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Esférico</label><input type="text" id="e_oe_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Cilíndrico</label><input type="text" id="c_oe_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Eixo</label><input type="text" id="x_oe_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">DNP</label><input type="text" id="dnp_oe_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
+                    <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Altura</label><input type="text" id="alt_oe_p" class="w-full h-5 border border-amber-300 rounded text-[10px] px-1 bg-white"></div>
                 </div>
             </div>
 
-            <!-- LENTES SELECIONADAS -->
-            <div class="space-y-2">
-                <div class="bg-lens text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+            <!-- SELEÇÃO DE LENTES E LABORATÓRIO -->
+            <div class="space-y-1">
+                <div class="bg-lens text-white px-2.5 py-0.5 rounded text-[10px] font-bold uppercase flex items-center justify-between">
                     <span><i class="fa-solid fa-circle-dot mr-1"></i> Seleção de Lentes e Laboratório</span>
                 </div>
 
-                <!-- LENTE OD -->
-                <div class="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-200 flex-wrap lg:flex-nowrap">
-                    <div class="bg-lens text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OD</div>
-                    <div class="w-full lg:w-48"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tipo Lente</label>
-                        <select id="tipo_lente_od" onchange="filtrarLentes('od')" class="w-full h-7 border border-slate-300 rounded text-xs">
-                            <option value=""></option>
-                            <option>Visão Simples Acabado</option>
-                            <option>Visão Simples Surfaçada</option>
-                            <option>Synchrony Progressive</option>
-                            <option>Zeiss Progressive</option>
-                            <option>VDT Progressive</option>
-                            <option>Funcional</option>
-                            <option>Multifocal C.O. PRO</option>
-                            <option>Multifocal C.O. PRO HD</option>
-                        </select>
+                <div class="bg-blue-50/40 p-1.5 rounded border border-blue-200 space-y-1">
+                    <div class="flex items-center gap-1 flex-wrap lg:flex-nowrap">
+                        <div class="bg-lens text-white font-black text-[10px] px-2 py-0.5 rounded min-w-[35px] text-center">OD</div>
+                        <div class="w-full lg:w-40"><label class="block text-[7px] font-bold text-slate-600 uppercase">Tipo Lente</label>
+                            <select id="tipo_lente_od" onchange="filtrarLentes('od')" class="w-full h-5 border border-slate-300 rounded text-[10px]">
+                                <option value=""></option>
+                                <option>Visão Simples Acabado</option>
+                                <option>Visão Simples Surfaçada</option>
+                                <option>Synchrony Progressive</option>
+                                <option>Zeiss Progressive</option>
+                                <option>VDT Progressive</option>
+                                <option>Funcional</option>
+                                <option>Multifocal C.O. PRO</option>
+                                <option>Multifocal C.O. PRO HD</option>
+                            </select>
+                        </div>
+                        <div class="w-16"><label class="block text-[7px] font-bold text-slate-600 uppercase">Cód.</label><input type="text" id="cod_lente_od" oninput="buscarPorCodigo('od')" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1"></div>
+                        <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Descrição da Lente</label><select id="nome_lente_od" onchange="buscarPorNome('od')" class="w-full h-5 border border-slate-300 rounded text-[10px]"><option value=""></option></select></div>
+                        <div class="w-full lg:w-32"><label class="block text-[7px] font-bold text-slate-600 uppercase">Tratamento</label>
+                            <select id="ar_od" onchange="atualizarPrecoAutomatico()" class="w-full h-5 border border-slate-300 rounded text-[10px]">
+                                <option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option>
+                            </select>
+                        </div>
+                        <div class="w-full lg:w-24"><label class="block text-[7px] font-bold text-slate-600 uppercase">Laboratório</label>
+                            <select id="lab_od" class="w-full h-5 border border-slate-300 rounded text-[10px]">
+                                <option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option>
+                            </select>
+                        </div>
                     </div>
-                    <div class="w-24"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cód.</label><input type="text" id="cod_lente_od" oninput="buscarPorCodigo('od')" class="w-full h-7 border border-slate-300 rounded text-xs px-1"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Descrição da Lente</label><select id="nome_lente_od" onchange="buscarPorNome('od')" class="w-full h-7 border border-slate-300 rounded text-xs"><option value=""></option></select></div>
-                    <div class="w-full lg:w-40"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tratamento</label>
-                        <select id="ar_od" onchange="atualizarPrecoAutomatico()" class="w-full h-7 border border-slate-300 rounded text-xs">
-                            <option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option>
-                        </select>
-                    </div>
-                    <div class="w-full lg:w-32"><label class="block text-[9px] font-bold text-slate-600 uppercase">Laboratório</label>
-                        <select id="lab_od" class="w-full h-7 border border-slate-300 rounded text-xs">
-                            <option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option>
-                        </select>
-                    </div>
-                </div>
 
-                <!-- LENTE OE -->
-                <div class="flex items-center gap-2 bg-blue-50/50 p-2 rounded-lg border border-blue-200 flex-wrap lg:flex-nowrap">
-                    <div class="bg-lens text-white font-black text-xs px-3 py-1.5 rounded min-w-[45px] text-center">OE</div>
-                    <div class="w-full lg:w-48"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tipo Lente</label>
-                        <select id="tipo_lente_oe" onchange="filtrarLentes('oe')" class="w-full h-7 border border-slate-300 rounded text-xs">
-                            <option value=""></option>
-                            <option>Visão Simples Acabado</option>
-                            <option>Visão Simples Surfaçada</option>
-                            <option>Synchrony Progressive</option>
-                            <option>Zeiss Progressive</option>
-                            <option>VDT Progressive</option>
-                            <option>Funcional</option>
-                            <option>Multifocal C.O. PRO</option>
-                            <option>Multifocal C.O. PRO HD</option>
-                        </select>
-                    </div>
-                    <div class="w-24"><label class="block text-[9px] font-bold text-slate-600 uppercase">Cód.</label><input type="text" id="cod_lente_oe" oninput="buscarPorCodigo('oe')" class="w-full h-7 border border-slate-300 rounded text-xs px-1"></div>
-                    <div class="flex-1"><label class="block text-[9px] font-bold text-slate-600 uppercase">Descrição da Lente</label><select id="nome_lente_oe" onchange="buscarPorNome('oe')" class="w-full h-7 border border-slate-300 rounded text-xs"><option value=""></option></select></div>
-                    <div class="w-full lg:w-40"><label class="block text-[9px] font-bold text-slate-600 uppercase">Tratamento</label>
-                        <select id="ar_oe" onchange="atualizarPrecoAutomatico()" class="w-full h-7 border border-slate-300 rounded text-xs">
-                            <option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option>
-                        </select>
-                    </div>
-                    <div class="w-full lg:w-32"><label class="block text-[9px] font-bold text-slate-600 uppercase">Laboratório</label>
-                        <select id="lab_oe" class="w-full h-7 border border-slate-300 rounded text-xs">
-                            <option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option>
-                        </select>
+                    <div class="flex items-center gap-1 flex-wrap lg:flex-nowrap pt-1 border-t border-blue-200/60">
+                        <div class="bg-lens text-white font-black text-[10px] px-2 py-0.5 rounded min-w-[35px] text-center">OE</div>
+                        <div class="w-full lg:w-40"><label class="block text-[7px] font-bold text-slate-600 uppercase">Tipo Lente</label>
+                            <select id="tipo_lente_oe" onchange="filtrarLentes('oe')" class="w-full h-5 border border-slate-300 rounded text-[10px]">
+                                <option value=""></option>
+                                <option>Visão Simples Acabado</option>
+                                <option>Visão Simples Surfaçada</option>
+                                <option>Synchrony Progressive</option>
+                                <option>Zeiss Progressive</option>
+                                <option>VDT Progressive</option>
+                                <option>Funcional</option>
+                                <option>Multifocal C.O. PRO</option>
+                                <option>Multifocal C.O. PRO HD</option>
+                            </select>
+                        </div>
+                        <div class="w-16"><label class="block text-[7px] font-bold text-slate-600 uppercase">Cód.</label><input type="text" id="cod_lente_oe" oninput="buscarPorCodigo('oe')" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1"></div>
+                        <div class="flex-1"><label class="block text-[7px] font-bold text-slate-600 uppercase">Descrição da Lente</label><select id="nome_lente_oe" onchange="buscarPorNome('oe')" class="w-full h-5 border border-slate-300 rounded text-[10px]"><option value=""></option></select></div>
+                        <div class="w-full lg:w-32"><label class="block text-[7px] font-bold text-slate-600 uppercase">Tratamento</label>
+                            <select id="ar_oe" onchange="atualizarPrecoAutomatico()" class="w-full h-5 border border-slate-300 rounded text-[10px]">
+                                <option value=""></option><option>Sem AR</option><option>Duravision Chrome UV</option><option>Duravision Silver UV</option><option>Duravision Platinum UV</option><option>Mar</option><option>Mar Extra</option><option>HMC Blue</option><option>C.O. Clean</option><option>HiperClean SHA</option><option>HiperClean Max+</option><option>HiperClean Dual+</option><option>HiperClean Blue</option>
+                            </select>
+                        </div>
+                        <div class="w-full lg:w-24"><label class="block text-[7px] font-bold text-slate-600 uppercase">Laboratório</label>
+                            <select id="lab_oe" class="w-full h-5 border border-slate-300 rounded text-[10px]">
+                                <option value=""></option><option>Braslab</option><option>Zeiss</option><option>Zurich Vision</option>
+                            </select>
+                        </div>
                     </div>
                 </div>
             </div>
 
-            <!-- ARMAÇÃO E MEDIDAS TÉCNICAS -->
-            <div class="space-y-3">
-                <div class="bg-brand-800 text-white px-3 py-1 rounded text-xs font-bold uppercase flex items-center justify-between">
+            <!-- ARMAÇÃO & MEDIDAS TÉCNICAS (MATERIAL, ESTADO E MARCA/REF NA MESMA LINHA) -->
+            <div class="space-y-1">
+                <div class="bg-brand-800 text-white px-2.5 py-0.5 rounded text-[10px] font-bold uppercase flex items-center justify-between">
                     <span><i class="fa-solid fa-ruler-combined mr-1"></i> Armação & Medidas Técnicas</span>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-12 gap-1.5">
                     <div class="lg:col-span-3">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Material Armação</label>
-                        <select id="material_arma" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Material Armação</label>
+                        <select id="material_arma" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                             <option value=""></option><option>Acetato</option><option>Metal</option><option>Fio de Nylon</option><option>Parafuso</option>
                         </select>
                     </div>
-                    <div class="lg:col-span-2">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Estado</label>
-                        <select id="estado_arma" class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    <div class="lg:col-span-3">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Estado</label>
+                        <select id="estado_arma" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                             <option value=""></option><option>Novo</option><option>Usado</option>
                         </select>
                     </div>
-                    <div class="lg:col-span-7">
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Marca / Ref. / Cor / Tam</label>
-                        <input type="text" id="ref_arma" list="lista_armacoes" oninput="buscarSugestoes(this.value)" onblur="buscarNoEstoque(this.value)" placeholder="Digite a referência para autocompletar..." class="w-full h-8 border border-slate-300 rounded px-2 text-xs">
+                    <div class="lg:col-span-6">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Marca / Ref. / Cor / Tam</label>
+                        <input type="text" id="ref_arma" list="lista_armacoes" oninput="buscarSugestoes(this.value)" onblur="buscarNoEstoque(this.value)" placeholder="" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px]">
                         <datalist id="lista_armacoes"></datalist>
                     </div>
                 </div>
 
-                <!-- MEDIDAS MEDIDAS DE LENTE E DIÂMETRO -->
-                <div class="grid grid-cols-2 sm:grid-cols-5 gap-3 bg-slate-50 p-3 rounded-lg border border-slate-200">
-                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Ponte</label><input type="number" id="m_ponte" oninput="calcularDiametro()" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
-                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Aro Horiz.</label><input type="number" id="m_aro_h" oninput="calcularDiametro()" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
-                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Aro Vert.</label><input type="number" id="m_aro_v" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
-                    <div><label class="block text-[9px] font-bold text-slate-600 uppercase">Aro Maior</label><input type="number" id="m_aro_m" oninput="calcularDiametro()" class="w-full h-7 border border-slate-300 rounded text-xs px-2"></div>
+                <!-- MEDIDAS DE LENTE E DIÂMETRO -->
+                <div class="grid grid-cols-2 sm:grid-cols-5 gap-1.5 bg-slate-50 p-1.5 rounded border border-slate-200">
+                    <div><label class="block text-[7px] font-bold text-slate-600 uppercase">Ponte</label><input type="number" id="m_ponte" oninput="calcularDiametro()" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1"></div>
+                    <div><label class="block text-[7px] font-bold text-slate-600 uppercase">Aro Horiz.</label><input type="number" id="m_aro_h" oninput="calcularDiametro()" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1"></div>
+                    <div><label class="block text-[7px] font-bold text-slate-600 uppercase">Aro Vert.</label><input type="number" id="m_aro_v" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1"></div>
+                    <div><label class="block text-[7px] font-bold text-slate-600 uppercase">Aro Maior</label><input type="number" id="m_aro_m" oninput="calcularDiametro()" class="w-full h-5 border border-slate-300 rounded text-[10px] px-1"></div>
                     <div>
-                        <label class="block text-[9px] font-bold text-brand-800 uppercase">Ø Sugerido</label>
-                        <input type="text" id="m_diametro" readonly class="w-full h-7 border border-blue-300 rounded text-xs px-2 font-black text-brand-800 bg-blue-50">
+                        <label class="block text-[7px] font-bold text-brand-800 uppercase">Ø Sugerido</label>
+                        <input type="text" id="m_diametro" readonly class="w-full h-5 border border-blue-300 rounded text-[10px] px-1 font-black text-brand-800 bg-blue-50">
                     </div>
                 </div>
             </div>
 
             <!-- VALORES E TOTALIZADORES DA VENDA -->
-            <div class="financeiro-section bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-3">
-                <div class="text-xs font-bold text-brand-800 uppercase tracking-wider flex items-center gap-1">
+            <div class="financeiro-section bg-slate-50 p-2 rounded border border-slate-200 space-y-1">
+                <div class="text-[10px] font-bold text-brand-800 uppercase tracking-wider flex items-center gap-1">
                     <i class="fa-solid fa-calculator"></i> Fechamento Financeiro da Venda
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-4 gap-1.5">
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Vlr. Armação (R$)</label>
-                        <input type="number" id="vlr_armacao" step="0.01" oninput="calcularTotal()" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Vlr. Armação (R$)</label>
+                        <input type="number" id="vlr_armacao" step="0.01" oninput="calcularTotal()" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px] font-bold">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Vlr. Lentes (R$)</label>
-                        <input type="number" id="vlr_lentes" step="0.01" oninput="calcularTotal()" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Vlr. Lentes (R$)</label>
+                        <input type="number" id="vlr_lentes" step="0.01" oninput="calcularTotal()" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px] font-bold">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-slate-700 uppercase">Desconto (R$)</label>
-                        <input type="number" id="vlr_desconto" step="0.01" oninput="calcularTotal()" class="w-full h-8 border border-slate-300 rounded px-2 text-xs font-bold text-red-600">
+                        <label class="block text-[8px] font-bold text-slate-700 uppercase">Desconto (R$)</label>
+                        <input type="number" id="vlr_desconto" step="0.01" oninput="calcularTotal()" class="w-full h-6 border border-slate-300 rounded px-1.5 text-[10px] font-bold text-red-600">
                     </div>
                     <div>
-                        <label class="block text-[10px] font-bold text-emerald-800 uppercase">Total Geral (R$)</label>
-                        <input type="text" id="vlr_total" readonly class="w-full h-8 border border-emerald-500 rounded px-2 text-sm font-black text-white bg-emerald-700">
+                        <label class="block text-[8px] font-bold text-emerald-800 uppercase">Total Geral (R$)</label>
+                        <input type="text" id="vlr_total" readonly class="w-full h-6 border border-emerald-500 rounded px-1.5 text-[10px] font-black text-white bg-emerald-700">
                     </div>
                 </div>
             </div>
 
             <!-- OBSERVAÇÕES DA OS -->
             <div>
-                <label class="block text-[10px] font-bold text-slate-700 uppercase mb-1">Observações do Pedido / Laboratório</label>
-                <textarea id="obs_pedido" rows="2" placeholder="Digite detalhes sobre montagem, coloração ou observações específicas..." class="w-full border border-slate-300 rounded p-2 text-xs"></textarea>
+                <label class="block text-[8px] font-bold text-slate-700 uppercase mb-0.5">Observações do Pedido / Laboratório</label>
+                <textarea id="obs_pedido" rows="1" placeholder="" class="w-full border border-slate-300 rounded p-1 text-[10px]"></textarea>
             </div>
 
             <!-- BOTÕES DE AÇÃO DA OS -->
-            <div class="flex flex-wrap items-center justify-center gap-3 pt-2 no-print">
+            <div class="flex flex-wrap items-center justify-center gap-3 pt-1 no-print">
                 <button onclick="salvarPedido()" title="Salvar O.S." class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-lg shadow transition flex items-center gap-2 text-xs">
                     <i class="fa-solid fa-floppy-disk text-sm"></i> Salvar Pedido
                 </button>
@@ -618,7 +560,6 @@
                 <p class="text-xs text-slate-500">Cadastre armações, lentes catalogadas e tratamentos disponíveis</p>
             </div>
 
-            <!-- SUB-ABAS DE ESTOQUE -->
             <div class="flex justify-center border-b border-slate-200 mb-6 gap-6">
                 <button onclick="alternarForm('form-armacoes')" id="subtab-armacoes" class="subtab-btn active pb-3 text-xs font-bold transition flex items-center gap-2">
                     <i class="fa-solid fa-glasses"></i> ARMAÇÕES
@@ -631,7 +572,6 @@
                 </button>
             </div>
 
-            <!-- FORMULÁRIO ARMAÇÕES -->
             <div id="form-armacoes" class="form-estoque max-w-2xl mx-auto bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
                 <h3 class="text-sm font-extrabold text-brand-800 border-b pb-2">Cadastrar Nova Armação</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -647,7 +587,6 @@
                 <button onclick="salvarArmacao()" class="w-full py-2.5 bg-brand-800 hover:bg-brand-900 text-white font-bold rounded text-xs transition">LANÇAR ARMAÇÃO NO ESTOQUE</button>
             </div>
 
-            <!-- FORMULÁRIO LENTES -->
             <div id="form-lentes" class="form-estoque hidden max-w-2xl mx-auto bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
                 <h3 class="text-sm font-extrabold text-emerald-700 border-b pb-2">Cadastrar Nova Lente no Catálogo</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -667,7 +606,6 @@
                 <button onclick="salvarLente()" class="w-full py-2.5 bg-emerald-700 hover:bg-emerald-800 text-white font-bold rounded text-xs transition">LANÇAR LENTE NO CATÁLOGO</button>
             </div>
 
-            <!-- FORMULÁRIO TRATAMENTOS -->
             <div id="form-tratamentos" class="form-estoque hidden max-w-2xl mx-auto bg-slate-50 p-6 rounded-xl border border-slate-200 space-y-4">
                 <h3 class="text-sm font-extrabold text-amber-600 border-b pb-2">Cadastrar Tratamento Antireflexo / Outros</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -695,7 +633,6 @@
                 </button>
             </div>
 
-            <!-- SELEÇÃO DE CLIENTE IMPORTADO -->
             <div id="busca_fin_wrapper" class="hidden bg-slate-50 p-3 rounded-lg border border-brand-200 space-y-2">
                 <label class="block text-xs font-bold text-brand-800 uppercase">Selecionar Cliente com Saldo Aberto:</label>
                 <select id="busca_fin_cliente" onchange="puxarDadosPedido(this.value); document.getElementById('busca_fin_wrapper').classList.add('hidden');" class="w-full h-9 border border-slate-300 rounded text-xs px-2">
@@ -703,7 +640,6 @@
                 </select>
             </div>
 
-            <!-- FILTRO DE PERÍODO DA DASHBOARD MENSAL -->
             <div class="bg-slate-50 p-4 rounded-xl border border-slate-200 space-y-4">
                 <div class="flex flex-wrap items-center justify-center gap-3">
                     <div class="flex items-center gap-2">
@@ -735,7 +671,6 @@
                 </div>
             </div>
 
-            <!-- FORMULÁRIO DE LANÇAMENTO FINANCEIRO -->
             <div class="bg-slate-100 p-4 rounded-xl border border-slate-300 space-y-3">
                 <h3 class="text-xs font-extrabold text-slate-800 uppercase tracking-wider">Novo Lançamento de Caixa / Quitação</h3>
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -778,7 +713,6 @@
 
 </main>
 
-<!-- RODAPÉ DA APLICAÇÃO -->
 <footer class="bg-slate-900 text-slate-400 text-[11px] py-4 text-center border-t border-slate-800 no-print mt-auto">
     <div class="max-w-7xl mx-auto px-4">
         <span>ÓTICA AHV STORE © 2026 • Sistema de Gestão & PDV de Alta Performance</span>
@@ -786,19 +720,17 @@
 </footer>
 
 <script>
-    // INICIALIZAÇÃO DO CLIENTE SUPABASE ORIGINAL
     const _supabase = (window.supabase && typeof window.supabase.createClient === 'function') 
         ? supabase.createClient('https://gxeuheqhpsapigyozanu.supabase.co', 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd4ZXVoZXFocHNhcGlneW96YW51Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQxNzU3NDcsImV4cCI6MjA4OTc1MTc0N30.h_Yqrj959cpXFKSYO3wrvGQ7RXO5QEL2NeRy1QqfQJc') 
         : null;
 
     let editandoPedido = false;
     let timerInatividade;
-    const TEMPO_LIMITE = 300000; // 5 minutos de inatividade
+    const TEMPO_LIMITE = 300000;
 
     let chartVendasInstance = null;
     let chartStatusInstance = null;
 
-    // TIMER DE INATIVIDADE DA SESSÃO
     function resetarTimer() {
         if (typeof timerInatividade !== 'undefined') clearTimeout(timerInatividade);
         timerInatividade = setTimeout(() => { 
@@ -812,7 +744,6 @@
     document.onclick = resetarTimer;
     document.onscroll = resetarTimer;
 
-    // SISTEMA DE TROCA DE ABAS NAVEGÁVEIS
     function trocarAba(nomeAba) {
         const abas = ['dashboard', 'vendas', 'estoque', 'financeiro'];
         abas.forEach(a => {
@@ -837,7 +768,6 @@
         if (nomeAba === 'dashboard') pdvAtualizarDashboard();
     }
 
-    // AUTENTICAÇÃO COM SUPABASE
     async function fazerLogin() {
         try {
             const user = document.getElementById('user_login')?.value.trim() || '';
@@ -874,7 +804,6 @@
             const agora = new Date();
             const primeiroDiaMes = new Date(agora.getFullYear(), agora.getMonth(), 1).toISOString();
 
-            // 1. KPI Vendas e Produção
             const { data: pedidosMes } = await _supabase
                 .from('tabela_pedidos')
                 .select('vlr_total, status_pedido, data_os')
@@ -897,13 +826,11 @@
             document.getElementById('pdv_kpi_vendas_qtd').innerText = qtdPedidos + ' pedidos registrados';
             document.getElementById('pdv_kpi_producao').innerText = emProducao;
 
-            // 2. KPI Armações
             const { data: armacoess } = await _supabase.from('tabela_armacoes').select('estoque');
             let totalEstoque = 0;
             if(armacoess) armacoess.forEach(a => totalEstoque += (parseInt(a.estoque) || 0));
             document.getElementById('pdv_kpi_estoque').innerText = totalEstoque;
 
-            // 3. KPI Fluxo Financeiro (Entradas x Saídas)
             const { data: financ } = await _supabase.from('financeiro').select('valor, tipo, data');
             let entradas = 0, saidas = 0;
             if(financ) {
@@ -922,13 +849,9 @@
             const ticketMedio = qtdPedidos > 0 ? (totalVendasMes / qtdPedidos) : 0;
             document.getElementById('pdv_ticket').innerText = 'R$ ' + ticketMedio.toLocaleString('pt-BR', {minimumFractionDigits: 2});
 
-            // 4. Renderiza Indicadores da View
             await carregarIndicadoresDashboard();
-
-            // 5. Renderizar Gráficos Chart.js
             await renderizarGraficosPDV();
 
-            // 6. Tabela das Últimas Vendas
             const { data: ultimas } = await _supabase.from('tabela_pedidos').select('num_os, nome_cliente, data_os, status_pedido, vlr_total').order('data_os', {ascending: false}).limit(5);
             const tbody = document.getElementById('pdv_ultimas_vendas');
             if(ultimas && ultimas.length > 0) {
@@ -945,7 +868,6 @@
                 tbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400">Nenhum pedido encontrado.</td></tr>';
             }
 
-            // 7. Alertas Operacionais
             const containerAlertas = document.getElementById('pdv_alertas');
             let htmlAlertas = '';
             if(totalEstoque < 5) htmlAlertas += `<div class="p-2.5 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-xs font-bold flex items-center justify-between"><span>⚠️ Nível de estoque baixo! (${totalEstoque} armações)</span></div>`;
@@ -961,14 +883,12 @@
         const { data: todosPedidos } = await _supabase.from('tabela_pedidos').select('vlr_total, status_pedido, data_os');
         if (!todosPedidos) return;
 
-        // Processa Status
         const statusCounts = {};
         todosPedidos.forEach(p => {
             const st = p.status_pedido || 'Orçamento';
             statusCounts[st] = (statusCounts[st] || 0) + 1;
         });
 
-        // Chart Status
         const ctxStatus = document.getElementById('pdv_chart_status').getContext('2d');
         if (chartStatusInstance) chartStatusInstance.destroy();
         chartStatusInstance = new Chart(ctxStatus, {
@@ -983,7 +903,6 @@
             options: { responsive: true, maintainAspectRatio: false }
         });
 
-        // Chart Vendas Semestrais
         const meses = [];
         const faturamentoMeses = [0,0,0,0,0,0];
         const hoje = new Date();
@@ -1133,7 +1052,6 @@
         document.getElementById('vlr_total').value = (armacao + lentes - desconto).toFixed(2); 
     }
 
-    // SALVAMENTO DE REGISTROS SUPABASE
     async function salvarPedido() {
         const os = document.getElementById('num_os').value;
         const nome = document.getElementById('nome_cliente').value;
@@ -1235,7 +1153,6 @@
         }
     }
 
-    // RELATÓRIO MEI ANUAL
     async function abrirRelatorioMEI() {
         try {
             const anoAtual = new Date().getFullYear();
@@ -1310,7 +1227,6 @@
         }
     }
 
-    // HELPERS E MÁSCARAS
     function preencherSeletores() {
         const fmt = (n) => (n > 0 ? "+" : "") + n.toFixed(2).replace('.', ',');
         document.querySelectorAll('.sel-esf').forEach(s => { 
@@ -1428,7 +1344,6 @@
         document.body.classList.remove('modo-lab');
     }
 
-    // VALIDAÇÃO DE SALDO E ATUALIZAÇÃO DE STATUS
     async function atualizarStatusPedido(numOS, novoStatus) {
         if (!_supabase) return alert("Erro de Conexão Supabase.");
 
